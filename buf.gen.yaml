@@ -4,9 +4,7 @@ plugins:
     out: src/gen
     opt:
       - target=ts
-      - keep_empty_files=true
   - remote: buf.build/connectrpc/es:v1.4.0
     out: src/gen
     opt:
       - target=ts
-      - keep_empty_files=true
