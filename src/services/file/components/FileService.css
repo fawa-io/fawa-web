@@ -1,0 +1,187 @@
+.page-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 2rem;
+    padding: 2rem;
+    min-height: calc(100vh - 4rem);
+}
+
+.fawa-logo {
+    font-size: 8rem;
+    font-weight: bold;
+    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    background: linear-gradient(45deg, #fff, #b3e5fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    flex-basis: 20%;
+    text-align: left;
+}
+
+.file-console-container {
+    max-width: 1280px;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    font-family: sans-serif;
+    flex-basis: 80%;
+}
+
+h1 {
+    margin-top: 0;
+    margin-bottom: 2rem;
+    font-size: 2.2rem;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.card-row {
+    display: flex;
+    justify-content: space-around;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 1rem;
+    padding: 2rem;
+    width: 45%;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.card h2 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.upload-card {
+    border-style: dashed;
+    border-width: 2px;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.upload-card p {
+    font-style: italic;
+    color: #eee;
+}
+
+.file-input {
+    margin-bottom: 1rem;
+}
+
+input[type="text"] {
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    border: 1px solid #ced4da;
+    width: 80%;
+    margin-bottom: 1rem;
+    background: rgba(255,255,255,0.8);
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+button:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+}
+
+button:hover:not(:disabled) {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+.progress-bar-container {
+    width: 100%;
+    background-color: #e9ecef;
+    border-radius: 0.25rem;
+    margin-top: 1rem;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background-color: #28a745;
+    height: 100%;
+    border-radius: 0.25rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: width 0.3s ease-in-out;
+}
+
+.logs-card {
+    width: auto;
+}
+
+.logs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+
+.logs-header h3 {
+    margin: 0;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.logs-header button {
+    background-color: #dc3545;
+}
+
+.logs-header button:hover {
+    background-color: #c82333;
+}
+
+.logs {
+    background-color: #2b2b2b;
+    color: #ffffff;
+    padding: 1em;
+    border-radius: 8px;
+    text-align: left;
+    height: 300px;
+    width: 100%;
+    overflow-y: auto;
+    font-family: 'Courier New', Courier, monospace;
+    box-sizing: border-box;
+}
+
+.logs > div {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

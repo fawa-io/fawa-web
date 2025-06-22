@@ -1,12 +1,10 @@
-import { GreetConsole } from './services/greet/components/GreetConsole';
+import { FileConsole } from './services/file/components/FileConsole';
 import './App.css';
 
 function App() {
-//TODO <FileUploader />
   return (
       <div className="App">
-        <GreetConsole />
-        {/* <SomeOtherFeatureComponent /> */}
+        <FileConsole />
       </div>
   );
 }

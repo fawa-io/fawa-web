@@ -1,5 +1,5 @@
 import {createConnectTransport} from "@connectrpc/connect-web";
 
 export const transport = createConnectTransport({
-    baseUrl: 'http://localhost:8081',
+    baseUrl: 'http://localhost:8080',
 })
