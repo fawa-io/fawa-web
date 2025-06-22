@@ -1,4 +1,4 @@
-import { GreetConsole } from './features/greet/components/GreetConsole';
+import { GreetConsole } from './services/greet/components/GreetConsole';
 import './App.css';
 
 function App() {
