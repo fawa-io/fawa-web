@@ -5,7 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch: {} # support manual runs
+  workflow_dispatch: {}
 
 jobs:
   ci:
@@ -16,18 +16,24 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'pnpm'
-          cache-dependency-path: pnpm-lock.yaml
+
 
       - name: Install Dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Lint Code
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Build Project
-        run: npm run build
+        run: pnpm run build
