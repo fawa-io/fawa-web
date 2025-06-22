@@ -52,3 +52,12 @@ export default tseslint.config({
   },
 })
 ```
+## Generate
+if you need to generate proto,please use
+```
+buf generate buf.build/fawa/fawa
+```
+and not use
+```
+buf generate
+```
