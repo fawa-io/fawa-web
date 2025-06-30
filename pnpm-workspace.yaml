@@ -1,0 +1,2 @@
+patchedDependencies:
+  '@connectrpc/connect-web': patches/@connectrpc__connect-web.patch
