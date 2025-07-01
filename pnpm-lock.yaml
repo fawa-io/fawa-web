@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@connectrpc/connect-web':
+    hash: 4160af1c9c835e2f60f6a4cc036fdc95aa85b81ae7718fc4ab5c4a4bd5891717
+    path: patches/@connectrpc__connect-web.patch
+
 importers:
 
   .:
@@ -16,7 +21,7 @@ importers:
         version: 2.0.2(@bufbuild/protobuf@2.6.0)
       '@connectrpc/connect-web':
         specifier: ^2.0.2
-        version: 2.0.2(@bufbuild/protobuf@2.6.0)(@connectrpc/connect@2.0.2(@bufbuild/protobuf@2.6.0))
+        version: 2.0.2(patch_hash=4160af1c9c835e2f60f6a4cc036fdc95aa85b81ae7718fc4ab5c4a4bd5891717)(@bufbuild/protobuf@2.6.0)(@connectrpc/connect@2.0.2(@bufbuild/protobuf@2.6.0))
       react:
         specifier: 19.1.0
         version: 19.1.0
@@ -1928,7 +1933,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@connectrpc/connect-web@2.0.2(@bufbuild/protobuf@2.6.0)(@connectrpc/connect@2.0.2(@bufbuild/protobuf@2.6.0))':
+  '@connectrpc/connect-web@2.0.2(patch_hash=4160af1c9c835e2f60f6a4cc036fdc95aa85b81ae7718fc4ab5c4a4bd5891717)(@bufbuild/protobuf@2.6.0)(@connectrpc/connect@2.0.2(@bufbuild/protobuf@2.6.0))':
     dependencies:
       '@bufbuild/protobuf': 2.6.0
       '@connectrpc/connect': 2.0.2(@bufbuild/protobuf@2.6.0)
