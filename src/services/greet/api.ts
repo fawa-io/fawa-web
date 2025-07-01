@@ -1,9 +1,9 @@
-import {createPromiseClient} from "@connectrpc/connect";
+import { createClient } from "@connectrpc/connect";
 
-import {GreetService} from "../../gen/fawa/greet/v1/hello_connect.ts";
+import { GreetService } from "../../gen/fawa/greet/v1/hello_pb";
 
-import {transport} from "../../common/transport.ts"
+import { transport } from "../../common/transport";
 
-const client = createPromiseClient(GreetService, transport)
+const client = createClient(GreetService, transport);
 
-export const greetApiClient = client
+export const greetClient = client;
