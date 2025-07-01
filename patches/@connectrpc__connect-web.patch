@@ -1,0 +1,2215 @@
+diff --git a/dist/cjs/assert-fetch-api.d.ts b/dist/cjs/assert-fetch-api.d.ts
+index 61a0e60b08aa79d41ab334a78bcfc55dcf953744..a4a598cc5af7d931f1d888011e4b61b543e65911 100644
+--- a/dist/cjs/assert-fetch-api.d.ts
++++ b/dist/cjs/assert-fetch-api.d.ts
+@@ -2,3 +2,9 @@
+  * Asserts that the fetch API is available.
+  */
+ export declare function assertFetchApi(): void;
++declare global {
++  interface RequestInit {
++    duplex?: string;
++  }
++}
++export declare const isRequestStreamsSupported: boolean;
+diff --git a/dist/cjs/assert-fetch-api.js b/dist/cjs/assert-fetch-api.js
+index a89a816af2c9dc965ce2e725e25254d60df2b234..c7ded34b481f10f86bf273835761f67a2da1c495 100644
+--- a/dist/cjs/assert-fetch-api.js
++++ b/dist/cjs/assert-fetch-api.js
+@@ -13,15 +13,37 @@
+ // See the License for the specific language governing permissions and
+ // limitations under the License.
+ Object.defineProperty(exports, "__esModule", { value: true });
++exports.isRequestStreamsSupported = void 0;
+ exports.assertFetchApi = assertFetchApi;
+ /**
+  * Asserts that the fetch API is available.
+  */
+ function assertFetchApi() {
+-    try {
+-        new Headers();
+-    }
+-    catch (_) {
+-        throw new Error("connect-web requires the fetch API. Are you running on an old version of Node.js? Node.js is not supported in Connect for Web - please stay tuned for Connect for Node.");
+-    }
++	try {
++		new Headers();
++	}
++	catch (_) {
++		throw new Error("connect-web requires the fetch API. Are you running on an old version of Node.js? Node.js is not supported in Connect for Web - please stay tuned for Connect for Node.");
++	}
+ }
++// Check the browser is supporting the duplex option
++// for the request stream.
++// https://developer.chrome.com/docs/capabilities/web-apis/fetch-streaming-requests#feature_detection
++function supportsRequestStreams() {
++	try {
++		let duplexAccessed = false;
++		const hasContentType = new Request("", {
++			body: new ReadableStream(),
++			method: "POST",
++			get duplex() {
++				duplexAccessed = true;
++				return "half";
++			},
++		}).headers.has("Content-Type");
++		return duplexAccessed && !hasContentType;
++	}
++	catch (_a) {
++		return false;
++	}
++}
++exports.isRequestStreamsSupported = supportsRequestStreams();
+diff --git a/dist/cjs/connect-transport.js b/dist/cjs/connect-transport.js
+index 8c4ced3cd157fd07a9f8e911cb23c9288db684e2..ccf7ddfa1c7a25a82b6045fa65829a703ed4fca5 100644
+--- a/dist/cjs/connect-transport.js
++++ b/dist/cjs/connect-transport.js
+@@ -12,18 +12,25 @@
+ // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ // See the License for the specific language governing permissions and
+ // limitations under the License.
+-var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
+-var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
+-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+-    var g = generator.apply(thisArg, _arguments || []), i, q = [];
+-    return i = Object.create((typeof AsyncIterator === "function" ? AsyncIterator : Object).prototype), verb("next"), verb("throw"), verb("return", awaitReturn), i[Symbol.asyncIterator] = function () { return this; }, i;
+-    function awaitReturn(f) { return function (v) { return Promise.resolve(v).then(f, reject); }; }
+-    function verb(n, f) { if (g[n]) { i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; if (f) i[n] = f(i[n]); } }
+-    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+-    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
+-    function fulfill(value) { resume("next", value); }
+-    function reject(value) { resume("throw", value); }
+-    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
++var __await = (this && this.__await) || function(v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
++var __asyncGenerator = (this && this.__asyncGenerator) || function(thisArg, _arguments, generator) {
++	if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
++	var g = generator.apply(thisArg, _arguments || []), i, q = [];
++	return i = Object.create((typeof AsyncIterator === "function" ? AsyncIterator : Object).prototype), verb("next"), verb("throw"), verb("return", awaitReturn), i[Symbol.asyncIterator] = function() { return this; }, i;
++	function awaitReturn(f) { return function(v) { return Promise.resolve(v).then(f, reject); }; }
++	function verb(n, f) { if (g[n]) { i[n] = function(v) { return new Promise(function(a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; if (f) i[n] = f(i[n]); } }
++	function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
++	function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
++	function fulfill(value) { resume("next", value); }
++	function reject(value) { resume("throw", value); }
++	function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
++};
++var __asyncValues = (this && this.__asyncValues) || function(o) {
++	if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
++	var m = o[Symbol.asyncIterator], i;
++	return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function() { return this; }, i);
++	function verb(n) { i[n] = o[n] && function(v) { return new Promise(function(resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
++	function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+ };
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.createConnectTransport = createConnectTransport;
+@@ -34,7 +41,7 @@ const protocol_connect_1 = require("@connectrpc/connect/protocol-connect");
+ const assert_fetch_api_js_1 = require("./assert-fetch-api.js");
+ const wkt_1 = require("@bufbuild/protobuf/wkt");
+ const fetchOptions = {
+-    redirect: "error",
++	redirect: "error",
+ };
+ /**
+  * Create a Transport for the Connect protocol, which makes unary and
+@@ -42,152 +49,187 @@ const fetchOptions = {
+  * API to make HTTP requests.
+  */
+ function createConnectTransport(options) {
+-    var _a;
+-    (0, assert_fetch_api_js_1.assertFetchApi)();
+-    const useBinaryFormat = (_a = options.useBinaryFormat) !== null && _a !== void 0 ? _a : false;
+-    return {
+-        async unary(method, signal, timeoutMs, header, message, contextValues) {
+-            const { serialize, parse } = (0, protocol_1.createClientMethodSerializers)(method, useBinaryFormat, options.jsonOptions, options.binaryOptions);
+-            timeoutMs =
+-                timeoutMs === undefined
+-                    ? options.defaultTimeoutMs
+-                    : timeoutMs <= 0
+-                        ? undefined
+-                        : timeoutMs;
+-            return await (0, protocol_1.runUnaryCall)({
+-                interceptors: options.interceptors,
+-                signal,
+-                timeoutMs,
+-                req: {
+-                    stream: false,
+-                    service: method.parent,
+-                    method,
+-                    requestMethod: "POST",
+-                    url: (0, protocol_1.createMethodUrl)(options.baseUrl, method),
+-                    header: (0, protocol_connect_1.requestHeader)(method.methodKind, useBinaryFormat, timeoutMs, header, false),
+-                    contextValues: contextValues !== null && contextValues !== void 0 ? contextValues : (0, connect_1.createContextValues)(),
+-                    message,
+-                },
+-                next: async (req) => {
+-                    var _a;
+-                    const useGet = options.useHttpGet === true &&
+-                        method.idempotency ===
+-                            wkt_1.MethodOptions_IdempotencyLevel.NO_SIDE_EFFECTS;
+-                    let body = null;
+-                    if (useGet) {
+-                        req = (0, protocol_connect_1.transformConnectPostToGetRequest)(req, serialize(req.message), useBinaryFormat);
+-                    }
+-                    else {
+-                        body = serialize(req.message);
+-                    }
+-                    const fetch = (_a = options.fetch) !== null && _a !== void 0 ? _a : globalThis.fetch;
+-                    const response = await fetch(req.url, Object.assign(Object.assign({}, fetchOptions), { method: req.requestMethod, headers: req.header, signal: req.signal, body }));
+-                    const { isUnaryError, unaryError } = (0, protocol_connect_1.validateResponse)(method.methodKind, useBinaryFormat, response.status, response.headers);
+-                    if (isUnaryError) {
+-                        throw (0, protocol_connect_1.errorFromJson)((await response.json()), (0, connect_1.appendHeaders)(...(0, protocol_connect_1.trailerDemux)(response.headers)), unaryError);
+-                    }
+-                    const [demuxedHeader, demuxedTrailer] = (0, protocol_connect_1.trailerDemux)(response.headers);
+-                    return {
+-                        stream: false,
+-                        service: method.parent,
+-                        method,
+-                        header: demuxedHeader,
+-                        message: useBinaryFormat
+-                            ? parse(new Uint8Array(await response.arrayBuffer()))
+-                            : (0, protobuf_1.fromJson)(method.output, (await response.json()), (0, protocol_1.getJsonOptions)(options.jsonOptions)),
+-                        trailer: demuxedTrailer,
+-                    };
+-                },
+-            });
+-        },
+-        async stream(method, signal, timeoutMs, header, input, contextValues) {
+-            const { serialize, parse } = (0, protocol_1.createClientMethodSerializers)(method, useBinaryFormat, options.jsonOptions, options.binaryOptions);
+-            function parseResponseBody(body, trailerTarget, header, signal) {
+-                return __asyncGenerator(this, arguments, function* parseResponseBody_1() {
+-                    const reader = (0, protocol_1.createEnvelopeReadableStream)(body).getReader();
+-                    let endStreamReceived = false;
+-                    for (;;) {
+-                        const result = yield __await(reader.read());
+-                        if (result.done) {
+-                            break;
+-                        }
+-                        const { flags, data } = result.value;
+-                        if ((flags & protocol_1.compressedFlag) === protocol_1.compressedFlag) {
+-                            throw new connect_1.ConnectError(`protocol error: received unsupported compressed output`, connect_1.Code.Internal);
+-                        }
+-                        if ((flags & protocol_connect_1.endStreamFlag) === protocol_connect_1.endStreamFlag) {
+-                            endStreamReceived = true;
+-                            const endStream = (0, protocol_connect_1.endStreamFromJson)(data);
+-                            if (endStream.error) {
+-                                const error = endStream.error;
+-                                header.forEach((value, key) => {
+-                                    error.metadata.append(key, value);
+-                                });
+-                                throw error;
+-                            }
+-                            endStream.metadata.forEach((value, key) => trailerTarget.set(key, value));
+-                            continue;
+-                        }
+-                        yield yield __await(parse(data));
+-                    }
+-                    // Node wil not throw an AbortError on `read` if the
+-                    // signal is aborted before `getReader` is called.
+-                    // As a work around we check at the end and throw.
+-                    //
+-                    // Ref: https://github.com/nodejs/undici/issues/1940
+-                    if ("throwIfAborted" in signal) {
+-                        // We assume that implementations without `throwIfAborted` (old
+-                        // browsers) do honor aborted signals on `read`.
+-                        signal.throwIfAborted();
+-                    }
+-                    if (!endStreamReceived) {
+-                        throw "missing EndStreamResponse";
+-                    }
+-                });
+-            }
+-            async function createRequestBody(input) {
+-                if (method.methodKind != "server_streaming") {
+-                    throw "The fetch API does not support streaming request bodies";
+-                }
+-                const r = await input[Symbol.asyncIterator]().next();
+-                if (r.done == true) {
+-                    throw "missing request message";
+-                }
+-                return (0, protocol_1.encodeEnvelope)(0, serialize(r.value));
+-            }
+-            timeoutMs =
+-                timeoutMs === undefined
+-                    ? options.defaultTimeoutMs
+-                    : timeoutMs <= 0
+-                        ? undefined
+-                        : timeoutMs;
+-            return await (0, protocol_1.runStreamingCall)({
+-                interceptors: options.interceptors,
+-                timeoutMs,
+-                signal,
+-                req: {
+-                    stream: true,
+-                    service: method.parent,
+-                    method,
+-                    requestMethod: "POST",
+-                    url: (0, protocol_1.createMethodUrl)(options.baseUrl, method),
+-                    header: (0, protocol_connect_1.requestHeader)(method.methodKind, useBinaryFormat, timeoutMs, header, false),
+-                    contextValues: contextValues !== null && contextValues !== void 0 ? contextValues : (0, connect_1.createContextValues)(),
+-                    message: input,
+-                },
+-                next: async (req) => {
+-                    var _a;
+-                    const fetch = (_a = options.fetch) !== null && _a !== void 0 ? _a : globalThis.fetch;
+-                    const fRes = await fetch(req.url, Object.assign(Object.assign({}, fetchOptions), { method: req.requestMethod, headers: req.header, signal: req.signal, body: await createRequestBody(req.message) }));
+-                    (0, protocol_connect_1.validateResponse)(method.methodKind, useBinaryFormat, fRes.status, fRes.headers);
+-                    if (fRes.body === null) {
+-                        throw "missing response body";
+-                    }
+-                    const trailer = new Headers();
+-                    const res = Object.assign(Object.assign({}, req), { header: fRes.headers, trailer, message: parseResponseBody(fRes.body, trailer, fRes.headers, req.signal) });
+-                    return res;
+-                },
+-            });
+-        },
+-    };
++	var _a;
++	(0, assert_fetch_api_js_1.assertFetchApi)();
++	const useBinaryFormat = (_a = options.useBinaryFormat) !== null && _a !== void 0 ? _a : false;
++	return {
++		async unary(method, signal, timeoutMs, header, message, contextValues) {
++			const { serialize, parse } = (0, protocol_1.createClientMethodSerializers)(method, useBinaryFormat, options.jsonOptions, options.binaryOptions);
++			timeoutMs =
++				timeoutMs === undefined
++					? options.defaultTimeoutMs
++					: timeoutMs <= 0
++						? undefined
++						: timeoutMs;
++			return await (0, protocol_1.runUnaryCall)({
++				interceptors: options.interceptors,
++				signal,
++				timeoutMs,
++				req: {
++					stream: false,
++					service: method.parent,
++					method,
++					requestMethod: "POST",
++					url: (0, protocol_1.createMethodUrl)(options.baseUrl, method),
++					header: (0, protocol_connect_1.requestHeader)(method.methodKind, useBinaryFormat, timeoutMs, header, false),
++					contextValues: contextValues !== null && contextValues !== void 0 ? contextValues : (0, connect_1.createContextValues)(),
++					message,
++				},
++				next: async (req) => {
++					var _a;
++					const useGet = options.useHttpGet === true &&
++						method.idempotency ===
++						wkt_1.MethodOptions_IdempotencyLevel.NO_SIDE_EFFECTS;
++					let body = null;
++					if (useGet) {
++						req = (0, protocol_connect_1.transformConnectPostToGetRequest)(req, serialize(req.message), useBinaryFormat);
++					}
++					else {
++						body = serialize(req.message);
++					}
++					const fetch = (_a = options.fetch) !== null && _a !== void 0 ? _a : globalThis.fetch;
++					const response = await fetch(req.url, Object.assign(Object.assign({}, fetchOptions), { method: req.requestMethod, headers: req.header, signal: req.signal, body }));
++					const { isUnaryError, unaryError } = (0, protocol_connect_1.validateResponse)(method.methodKind, useBinaryFormat, response.status, response.headers);
++					if (isUnaryError) {
++						throw (0, protocol_connect_1.errorFromJson)((await response.json()), (0, connect_1.appendHeaders)(...(0, protocol_connect_1.trailerDemux)(response.headers)), unaryError);
++					}
++					const [demuxedHeader, demuxedTrailer] = (0, protocol_connect_1.trailerDemux)(response.headers);
++					return {
++						stream: false,
++						service: method.parent,
++						method,
++						header: demuxedHeader,
++						message: useBinaryFormat
++							? parse(new Uint8Array(await response.arrayBuffer()))
++							: (0, protobuf_1.fromJson)(method.output, (await response.json()), (0, protocol_1.getJsonOptions)(options.jsonOptions)),
++						trailer: demuxedTrailer,
++					};
++				},
++			});
++		},
++		async stream(method, signal, timeoutMs, header, input, contextValues) {
++			const { serialize, parse } = (0, protocol_1.createClientMethodSerializers)(method, useBinaryFormat, options.jsonOptions, options.binaryOptions);
++			function parseResponseBody(body, trailerTarget, header, signal) {
++				return __asyncGenerator(this, arguments, function* parseResponseBody_1() {
++					const reader = (0, protocol_1.createEnvelopeReadableStream)(body).getReader();
++					let endStreamReceived = false;
++					for (; ;) {
++						const result = yield __await(reader.read());
++						if (result.done) {
++							break;
++						}
++						const { flags, data } = result.value;
++						if ((flags & protocol_1.compressedFlag) === protocol_1.compressedFlag) {
++							throw new connect_1.ConnectError(`protocol error: received unsupported compressed output`, connect_1.Code.Internal);
++						}
++						if ((flags & protocol_connect_1.endStreamFlag) === protocol_connect_1.endStreamFlag) {
++							endStreamReceived = true;
++							const endStream = (0, protocol_connect_1.endStreamFromJson)(data);
++							if (endStream.error) {
++								const error = endStream.error;
++								header.forEach((value, key) => {
++									error.metadata.append(key, value);
++								});
++								throw error;
++							}
++							endStream.metadata.forEach((value, key) => trailerTarget.set(key, value));
++							continue;
++						}
++						yield yield __await(parse(data));
++					}
++					// Node wil not throw an AbortError on `read` if the
++					// signal is aborted before `getReader` is called.
++					// As a work around we check at the end and throw.
++					//
++					// Ref: https://github.com/nodejs/undici/issues/1940
++					if ("throwIfAborted" in signal) {
++						// We assume that implementations without `throwIfAborted` (old
++						// browsers) do honor aborted signals on `read`.
++						signal.throwIfAborted();
++					}
++					if (!endStreamReceived) {
++						throw "missing EndStreamResponse";
++					}
++				});
++			}
++			async function createRequestBody(input) {
++				var _a, e_1, _b, _c;
++				if (method.methodKind == "server_streaming") {
++					const r = await input[Symbol.asyncIterator]().next();
++					if (r.done == true) {
++						throw "missing request message";
++					}
++					return (0, protocol_1.encodeEnvelope)(0, serialize(r.value));
++				}
++				if (!assert_fetch_api_js_1.isRequestStreamsSupported) {
++					// If the browser does not support the duplex option, we need to
++					// buffer the entire request stream before sending it.
++					const chunks = [];
++					try {
++						for (var _d = true, input_1 = __asyncValues(input), input_1_1; input_1_1 = await input_1.next(), _a = input_1_1.done, !_a; _d = true) {
++							_c = input_1_1.value;
++							_d = false;
++							const chunk = _c;
++							chunks.push(serialize(chunk));
++						}
++					}
++					catch (e_1_1) { e_1 = { error: e_1_1 }; }
++					finally {
++						try {
++							if (!_d && !_a && (_b = input_1.return)) await _b.call(input_1);
++						}
++						finally { if (e_1) throw e_1.error; }
++					}
++					return (0, protocol_1.encodeEnvelope)(0, new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0)));
++				}
++				const stream = new ReadableStream({
++					async pull(controller) {
++						const r = await input[Symbol.asyncIterator]().next();
++						if (r.done == true) {
++							controller.close();
++							return;
++						}
++						const chunk = serialize(r.value);
++						controller.enqueue((0, protocol_1.encodeEnvelope)(0, chunk));
++					},
++				});
++				return stream;
++			}
++			timeoutMs =
++				timeoutMs === undefined
++					? options.defaultTimeoutMs
++					: timeoutMs <= 0
++						? undefined
++						: timeoutMs;
++			return await (0, protocol_1.runStreamingCall)({
++				interceptors: options.interceptors,
++				timeoutMs,
++				signal,
++				req: {
++					stream: true,
++					service: method.parent,
++					method,
++					requestMethod: "POST",
++					url: (0, protocol_1.createMethodUrl)(options.baseUrl, method),
++					header: (0, protocol_connect_1.requestHeader)(method.methodKind, useBinaryFormat, timeoutMs, header, false),
++					contextValues: contextValues !== null && contextValues !== void 0 ? contextValues : (0, connect_1.createContextValues)(),
++					message: input,
++				},
++				next: async (req) => {
++					var _a;
++					const fetch = (_a = options.fetch) !== null && _a !== void 0 ? _a : globalThis.fetch;
++					const body = await createRequestBody(req.message);
++					const isStreamBody = body instanceof ReadableStream;
++					const fRes = await fetch(req.url, Object.assign(Object.assign(Object.assign({}, fetchOptions), { method: req.requestMethod, headers: req.header, signal: req.signal, body }), (isStreamBody ? { duplex: "half" } : {})));
++					(0, protocol_connect_1.validateResponse)(method.methodKind, useBinaryFormat, fRes.status, fRes.headers);
++					if (fRes.body === null) {
++						throw "missing response body";
++					}
++					const trailer = new Headers();
++					const res = Object.assign(Object.assign({}, req), { header: fRes.headers, trailer, message: parseResponseBody(fRes.body, trailer, fRes.headers, req.signal) });
++					return res;
++				},
++			});
++		},
++	};
+ }
+diff --git a/dist/cjs/fetch.spec.d.ts b/dist/cjs/fetch.spec.d.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..cb0ff5c3b541f646105198ee23ac0fc3d805023e
+--- /dev/null
++++ b/dist/cjs/fetch.spec.d.ts
+@@ -0,0 +1 @@
++export {};
+diff --git a/dist/cjs/fetch.spec.js b/dist/cjs/fetch.spec.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..5889b36832fa4161dfb6a845e3ab29cf20ab41f8
+--- /dev/null
++++ b/dist/cjs/fetch.spec.js
+@@ -0,0 +1,119 @@
++"use strict";
++// Copyright 2021-2025 The Connect Authors
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++Object.defineProperty(exports, "__esModule", { value: true });
++const connect_conformance_1 = require("@connectrpc/connect-conformance");
++const connect_transport_js_1 = require("./connect-transport.js");
++const grpc_web_transport_js_1 = require("./grpc-web-transport.js");
++const protobuf_1 = require("@bufbuild/protobuf");
++describe("custom fetch", () => {
++	let originFetch;
++	beforeEach(() => {
++		originFetch = globalThis.fetch;
++	});
++	afterEach(() => {
++		globalThis.fetch = originFetch;
++	});
++	describe("with Connect transport", () => {
++		it("should only call Response#json with the JSON format", async () => {
++			const response = new Response((0, protobuf_1.toJsonString)(connect_conformance_1.UnaryResponseSchema, (0, protobuf_1.create)(connect_conformance_1.UnaryResponseSchema)), {
++				headers: {
++					"Content-Type": "application/json",
++				},
++			});
++			spyOn(response, "arrayBuffer").and.callThrough();
++			spyOn(response, "json").and.callThrough();
++			const transport = (0, connect_transport_js_1.createConnectTransport)({
++				baseUrl: "https://example.com",
++				fetch: () => Promise.resolve(response),
++			});
++			await transport.unary(connect_conformance_1.ConformanceService.method.unary, undefined, undefined, undefined, (0, protobuf_1.create)(connect_conformance_1.UnaryRequestSchema));
++			expect(response.json).toHaveBeenCalledTimes(1);
++			expect(response.arrayBuffer).toHaveBeenCalledTimes(0);
++		});
++		it("should only call Response#arrayBuffer with the binary format on the happy path", async () => {
++			const response = new Response((0, protobuf_1.toBinary)(connect_conformance_1.UnaryResponseSchema, (0, protobuf_1.create)(connect_conformance_1.UnaryResponseSchema)), {
++				headers: {
++					"Content-Type": "application/proto",
++				},
++			});
++			spyOn(response, "arrayBuffer").and.callThrough();
++			spyOn(response, "json").and.callThrough();
++			const transport = (0, connect_transport_js_1.createConnectTransport)({
++				fetch: () => Promise.resolve(response),
++				baseUrl: "https://example.com",
++				useBinaryFormat: true,
++			});
++			await transport.unary(connect_conformance_1.ConformanceService.method.unary, undefined, undefined, undefined, (0, protobuf_1.create)(connect_conformance_1.UnaryRequestSchema));
++			expect(response.json).toHaveBeenCalledTimes(0);
++			expect(response.arrayBuffer).toHaveBeenCalledTimes(1);
++		});
++		it("should call Response#json with the binary format for an error response", async () => {
++			const response = new Response(JSON.stringify({
++				code: "permission_denied",
++				message: "foobar",
++			}), {
++				status: 403,
++				headers: {
++					"Content-Type": "application/json",
++				},
++			});
++			spyOn(response, "arrayBuffer").and.callThrough();
++			spyOn(response, "json").and.callThrough();
++			const transport = (0, connect_transport_js_1.createConnectTransport)({
++				fetch: () => Promise.resolve(response),
++				baseUrl: "https://example.com",
++				useBinaryFormat: true,
++			});
++			await expectAsync(transport.unary(connect_conformance_1.ConformanceService.method.unary, undefined, undefined, undefined, (0, protobuf_1.create)(connect_conformance_1.UnaryRequestSchema))).toBeRejectedWithError(/\[permission_denied] foobar/);
++			expect(response.json).toHaveBeenCalledTimes(1);
++			expect(response.arrayBuffer).toHaveBeenCalledTimes(0);
++		});
++		it("should should defer resolving fetch until calling endpoint", async () => {
++			const response = new Response((0, protobuf_1.toJsonString)(connect_conformance_1.UnaryResponseSchema, (0, protobuf_1.create)(connect_conformance_1.UnaryResponseSchema)), {
++				headers: {
++					"Content-Type": "application/json",
++				},
++			});
++			spyOn(response, "arrayBuffer").and.callThrough();
++			spyOn(response, "json").and.callThrough();
++			const transport = (0, connect_transport_js_1.createConnectTransport)({
++				baseUrl: "https://example.com",
++			});
++			// Patch globalThis.fetch to mimic a polyfill or patch
++			globalThis.fetch = () => Promise.resolve(response);
++			await transport.unary(connect_conformance_1.ConformanceService.method.unary, undefined, undefined, undefined, (0, protobuf_1.create)(connect_conformance_1.UnaryRequestSchema));
++			expect(response.json).toHaveBeenCalledTimes(1);
++			expect(response.arrayBuffer).toHaveBeenCalledTimes(0);
++		});
++	});
++	describe("with gRPC-web transport", () => {
++		it("should should defer resolving fetch until calling endpoint", async () => {
++			const response = new Response((0, protobuf_1.toJsonString)(connect_conformance_1.UnaryResponseSchema, (0, protobuf_1.create)(connect_conformance_1.UnaryResponseSchema)), {
++				headers: {
++					"Content-Type": "application/json",
++				},
++			});
++			spyOn(response, "arrayBuffer").and.callThrough();
++			spyOn(response, "json").and.callThrough();
++			const transport = (0, grpc_web_transport_js_1.createGrpcWebTransport)({
++				baseUrl: "https://example.com",
++				useBinaryFormat: false,
++			});
++			// Patch globalThis.fetch to mimic a polyfill or patch
++			globalThis.fetch = () => Promise.reject("test-error-raised-from-patched-fetch");
++			await expectAsync(transport.unary(connect_conformance_1.ConformanceService.method.unary, undefined, undefined, undefined, (0, protobuf_1.create)(connect_conformance_1.UnaryRequestSchema))).toBeRejectedWithError(/test-error-raised-from-patched-fetch/);
++		});
++	});
++});
+diff --git a/dist/cjs/grpc-web-transport.js b/dist/cjs/grpc-web-transport.js
+index 89167797390bcbcb47974c56ead2f519b1a49b41..8b4b887c4bf0fa62c7ada467ce5f34987d698a27 100644
+--- a/dist/cjs/grpc-web-transport.js
++++ b/dist/cjs/grpc-web-transport.js
+@@ -12,18 +12,25 @@
+ // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ // See the License for the specific language governing permissions and
+ // limitations under the License.
+-var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
+-var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
+-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+-    var g = generator.apply(thisArg, _arguments || []), i, q = [];
+-    return i = Object.create((typeof AsyncIterator === "function" ? AsyncIterator : Object).prototype), verb("next"), verb("throw"), verb("return", awaitReturn), i[Symbol.asyncIterator] = function () { return this; }, i;
+-    function awaitReturn(f) { return function (v) { return Promise.resolve(v).then(f, reject); }; }
+-    function verb(n, f) { if (g[n]) { i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; if (f) i[n] = f(i[n]); } }
+-    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+-    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
+-    function fulfill(value) { resume("next", value); }
+-    function reject(value) { resume("throw", value); }
+-    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
++var __await = (this && this.__await) || function(v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
++var __asyncGenerator = (this && this.__asyncGenerator) || function(thisArg, _arguments, generator) {
++	if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
++	var g = generator.apply(thisArg, _arguments || []), i, q = [];
++	return i = Object.create((typeof AsyncIterator === "function" ? AsyncIterator : Object).prototype), verb("next"), verb("throw"), verb("return", awaitReturn), i[Symbol.asyncIterator] = function() { return this; }, i;
++	function awaitReturn(f) { return function(v) { return Promise.resolve(v).then(f, reject); }; }
++	function verb(n, f) { if (g[n]) { i[n] = function(v) { return new Promise(function(a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; if (f) i[n] = f(i[n]); } }
++	function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
++	function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
++	function fulfill(value) { resume("next", value); }
++	function reject(value) { resume("throw", value); }
++	function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
++};
++var __asyncValues = (this && this.__asyncValues) || function(o) {
++	if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
++	var m = o[Symbol.asyncIterator], i;
++	return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function() { return this; }, i);
++	function verb(n) { i[n] = o[n] && function(v) { return new Promise(function(resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
++	function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+ };
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.createGrpcWebTransport = createGrpcWebTransport;
+@@ -32,7 +39,7 @@ const protocol_1 = require("@connectrpc/connect/protocol");
+ const protocol_grpc_web_1 = require("@connectrpc/connect/protocol-grpc-web");
+ const assert_fetch_api_js_1 = require("./assert-fetch-api.js");
+ const fetchOptions = {
+-    redirect: "error",
++	redirect: "error",
+ };
+ /**
+  * Create a Transport for the gRPC-web protocol. The protocol encodes
+@@ -45,193 +52,228 @@ const fetchOptions = {
+  * support reading streaming responses from an XMLHttpRequest.
+  */
+ function createGrpcWebTransport(options) {
+-    var _a;
+-    (0, assert_fetch_api_js_1.assertFetchApi)();
+-    const useBinaryFormat = (_a = options.useBinaryFormat) !== null && _a !== void 0 ? _a : true;
+-    return {
+-        async unary(method, signal, timeoutMs, header, message, contextValues) {
+-            const { serialize, parse } = (0, protocol_1.createClientMethodSerializers)(method, useBinaryFormat, options.jsonOptions, options.binaryOptions);
+-            timeoutMs =
+-                timeoutMs === undefined
+-                    ? options.defaultTimeoutMs
+-                    : timeoutMs <= 0
+-                        ? undefined
+-                        : timeoutMs;
+-            return await (0, protocol_1.runUnaryCall)({
+-                interceptors: options.interceptors,
+-                signal,
+-                timeoutMs,
+-                req: {
+-                    stream: false,
+-                    service: method.parent,
+-                    method,
+-                    requestMethod: "POST",
+-                    url: (0, protocol_1.createMethodUrl)(options.baseUrl, method),
+-                    header: (0, protocol_grpc_web_1.requestHeader)(useBinaryFormat, timeoutMs, header, false),
+-                    contextValues: contextValues !== null && contextValues !== void 0 ? contextValues : (0, connect_1.createContextValues)(),
+-                    message,
+-                },
+-                next: async (req) => {
+-                    var _a;
+-                    const fetch = (_a = options.fetch) !== null && _a !== void 0 ? _a : globalThis.fetch;
+-                    const response = await fetch(req.url, Object.assign(Object.assign({}, fetchOptions), { method: req.requestMethod, headers: req.header, signal: req.signal, body: (0, protocol_1.encodeEnvelope)(0, serialize(req.message)) }));
+-                    const { headerError } = (0, protocol_grpc_web_1.validateResponse)(response.status, response.headers);
+-                    if (!response.body) {
+-                        if (headerError !== undefined)
+-                            throw headerError;
+-                        throw "missing response body";
+-                    }
+-                    const reader = (0, protocol_1.createEnvelopeReadableStream)(response.body).getReader();
+-                    let trailer;
+-                    let message;
+-                    for (;;) {
+-                        const r = await reader.read();
+-                        if (r.done) {
+-                            break;
+-                        }
+-                        const { flags, data } = r.value;
+-                        if ((flags & protocol_1.compressedFlag) === protocol_1.compressedFlag) {
+-                            throw new connect_1.ConnectError(`protocol error: received unsupported compressed output`, connect_1.Code.Internal);
+-                        }
+-                        if (flags === protocol_grpc_web_1.trailerFlag) {
+-                            if (trailer !== undefined) {
+-                                throw "extra trailer";
+-                            }
+-                            // Unary responses require exactly one response message, but in
+-                            // case of an error, it is perfectly valid to have a response body
+-                            // that only contains error trailers.
+-                            trailer = (0, protocol_grpc_web_1.trailerParse)(data);
+-                            continue;
+-                        }
+-                        if (message !== undefined) {
+-                            throw new connect_1.ConnectError("extra message", connect_1.Code.Unimplemented);
+-                        }
+-                        message = parse(data);
+-                    }
+-                    if (trailer === undefined) {
+-                        if (headerError !== undefined)
+-                            throw headerError;
+-                        throw new connect_1.ConnectError("missing trailer", response.headers.has(protocol_grpc_web_1.headerGrpcStatus)
+-                            ? connect_1.Code.Unimplemented
+-                            : connect_1.Code.Unknown);
+-                    }
+-                    (0, protocol_grpc_web_1.validateTrailer)(trailer, response.headers);
+-                    if (message === undefined) {
+-                        throw new connect_1.ConnectError("missing message", trailer.has(protocol_grpc_web_1.headerGrpcStatus) ? connect_1.Code.Unimplemented : connect_1.Code.Unknown);
+-                    }
+-                    return {
+-                        stream: false,
+-                        service: method.parent,
+-                        method,
+-                        header: response.headers,
+-                        message,
+-                        trailer,
+-                    };
+-                },
+-            });
+-        },
+-        async stream(method, signal, timeoutMs, header, input, contextValues) {
+-            const { serialize, parse } = (0, protocol_1.createClientMethodSerializers)(method, useBinaryFormat, options.jsonOptions, options.binaryOptions);
+-            function parseResponseBody(body, foundStatus, trailerTarget, header, signal) {
+-                return __asyncGenerator(this, arguments, function* parseResponseBody_1() {
+-                    const reader = (0, protocol_1.createEnvelopeReadableStream)(body).getReader();
+-                    if (foundStatus) {
+-                        // A grpc-status: 0 response header was present. This is a "trailers-only"
+-                        // response (a response without a body and no trailers).
+-                        //
+-                        // The spec seems to disallow a trailers-only response for status 0 - we are
+-                        // lenient and only verify that the body is empty.
+-                        //
+-                        // > [...] Trailers-Only is permitted for calls that produce an immediate error.
+-                        // See https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md
+-                        if (!(yield __await(reader.read())).done) {
+-                            throw "extra data for trailers-only";
+-                        }
+-                        return yield __await(void 0);
+-                    }
+-                    let trailerReceived = false;
+-                    for (;;) {
+-                        const result = yield __await(reader.read());
+-                        if (result.done) {
+-                            break;
+-                        }
+-                        const { flags, data } = result.value;
+-                        if ((flags & protocol_grpc_web_1.trailerFlag) === protocol_grpc_web_1.trailerFlag) {
+-                            if (trailerReceived) {
+-                                throw "extra trailer";
+-                            }
+-                            trailerReceived = true;
+-                            const trailer = (0, protocol_grpc_web_1.trailerParse)(data);
+-                            (0, protocol_grpc_web_1.validateTrailer)(trailer, header);
+-                            trailer.forEach((value, key) => trailerTarget.set(key, value));
+-                            continue;
+-                        }
+-                        if (trailerReceived) {
+-                            throw "extra message";
+-                        }
+-                        yield yield __await(parse(data));
+-                    }
+-                    // Node wil not throw an AbortError on `read` if the
+-                    // signal is aborted before `getReader` is called.
+-                    // As a work around we check at the end and throw.
+-                    //
+-                    // Ref: https://github.com/nodejs/undici/issues/1940
+-                    if ("throwIfAborted" in signal) {
+-                        // We assume that implementations without `throwIfAborted` (old
+-                        // browsers) do honor aborted signals on `read`.
+-                        signal.throwIfAborted();
+-                    }
+-                    if (!trailerReceived) {
+-                        throw "missing trailer";
+-                    }
+-                });
+-            }
+-            async function createRequestBody(input) {
+-                if (method.methodKind != "server_streaming") {
+-                    throw "The fetch API does not support streaming request bodies";
+-                }
+-                const r = await input[Symbol.asyncIterator]().next();
+-                if (r.done == true) {
+-                    throw "missing request message";
+-                }
+-                return (0, protocol_1.encodeEnvelope)(0, serialize(r.value));
+-            }
+-            timeoutMs =
+-                timeoutMs === undefined
+-                    ? options.defaultTimeoutMs
+-                    : timeoutMs <= 0
+-                        ? undefined
+-                        : timeoutMs;
+-            return (0, protocol_1.runStreamingCall)({
+-                interceptors: options.interceptors,
+-                signal,
+-                timeoutMs,
+-                req: {
+-                    stream: true,
+-                    service: method.parent,
+-                    method,
+-                    requestMethod: "POST",
+-                    url: (0, protocol_1.createMethodUrl)(options.baseUrl, method),
+-                    header: (0, protocol_grpc_web_1.requestHeader)(useBinaryFormat, timeoutMs, header, false),
+-                    contextValues: contextValues !== null && contextValues !== void 0 ? contextValues : (0, connect_1.createContextValues)(),
+-                    message: input,
+-                },
+-                next: async (req) => {
+-                    var _a;
+-                    const fetch = (_a = options.fetch) !== null && _a !== void 0 ? _a : globalThis.fetch;
+-                    const fRes = await fetch(req.url, Object.assign(Object.assign({}, fetchOptions), { method: req.requestMethod, headers: req.header, signal: req.signal, body: await createRequestBody(req.message) }));
+-                    const { foundStatus, headerError } = (0, protocol_grpc_web_1.validateResponse)(fRes.status, fRes.headers);
+-                    if (headerError != undefined) {
+-                        throw headerError;
+-                    }
+-                    if (!fRes.body) {
+-                        throw "missing response body";
+-                    }
+-                    const trailer = new Headers();
+-                    const res = Object.assign(Object.assign({}, req), { header: fRes.headers, trailer, message: parseResponseBody(fRes.body, foundStatus, trailer, fRes.headers, req.signal) });
+-                    return res;
+-                },
+-            });
+-        },
+-    };
++	var _a;
++	(0, assert_fetch_api_js_1.assertFetchApi)();
++	const useBinaryFormat = (_a = options.useBinaryFormat) !== null && _a !== void 0 ? _a : true;
++	return {
++		async unary(method, signal, timeoutMs, header, message, contextValues) {
++			const { serialize, parse } = (0, protocol_1.createClientMethodSerializers)(method, useBinaryFormat, options.jsonOptions, options.binaryOptions);
++			timeoutMs =
++				timeoutMs === undefined
++					? options.defaultTimeoutMs
++					: timeoutMs <= 0
++						? undefined
++						: timeoutMs;
++			return await (0, protocol_1.runUnaryCall)({
++				interceptors: options.interceptors,
++				signal,
++				timeoutMs,
++				req: {
++					stream: false,
++					service: method.parent,
++					method,
++					requestMethod: "POST",
++					url: (0, protocol_1.createMethodUrl)(options.baseUrl, method),
++					header: (0, protocol_grpc_web_1.requestHeader)(useBinaryFormat, timeoutMs, header, false),
++					contextValues: contextValues !== null && contextValues !== void 0 ? contextValues : (0, connect_1.createContextValues)(),
++					message,
++				},
++				next: async (req) => {
++					var _a;
++					const fetch = (_a = options.fetch) !== null && _a !== void 0 ? _a : globalThis.fetch;
++					const response = await fetch(req.url, Object.assign(Object.assign({}, fetchOptions), { method: req.requestMethod, headers: req.header, signal: req.signal, body: (0, protocol_1.encodeEnvelope)(0, serialize(req.message)) }));
++					const { headerError } = (0, protocol_grpc_web_1.validateResponse)(response.status, response.headers);
++					if (!response.body) {
++						if (headerError !== undefined)
++							throw headerError;
++						throw "missing response body";
++					}
++					const reader = (0, protocol_1.createEnvelopeReadableStream)(response.body).getReader();
++					let trailer;
++					let message;
++					for (; ;) {
++						const r = await reader.read();
++						if (r.done) {
++							break;
++						}
++						const { flags, data } = r.value;
++						if ((flags & protocol_1.compressedFlag) === protocol_1.compressedFlag) {
++							throw new connect_1.ConnectError(`protocol error: received unsupported compressed output`, connect_1.Code.Internal);
++						}
++						if (flags === protocol_grpc_web_1.trailerFlag) {
++							if (trailer !== undefined) {
++								throw "extra trailer";
++							}
++							// Unary responses require exactly one response message, but in
++							// case of an error, it is perfectly valid to have a response body
++							// that only contains error trailers.
++							trailer = (0, protocol_grpc_web_1.trailerParse)(data);
++							continue;
++						}
++						if (message !== undefined) {
++							throw new connect_1.ConnectError("extra message", connect_1.Code.Unimplemented);
++						}
++						message = parse(data);
++					}
++					if (trailer === undefined) {
++						if (headerError !== undefined)
++							throw headerError;
++						throw new connect_1.ConnectError("missing trailer", response.headers.has(protocol_grpc_web_1.headerGrpcStatus)
++							? connect_1.Code.Unimplemented
++							: connect_1.Code.Unknown);
++					}
++					(0, protocol_grpc_web_1.validateTrailer)(trailer, response.headers);
++					if (message === undefined) {
++						throw new connect_1.ConnectError("missing message", trailer.has(protocol_grpc_web_1.headerGrpcStatus) ? connect_1.Code.Unimplemented : connect_1.Code.Unknown);
++					}
++					return {
++						stream: false,
++						service: method.parent,
++						method,
++						header: response.headers,
++						message,
++						trailer,
++					};
++				},
++			});
++		},
++		async stream(method, signal, timeoutMs, header, input, contextValues) {
++			const { serialize, parse } = (0, protocol_1.createClientMethodSerializers)(method, useBinaryFormat, options.jsonOptions, options.binaryOptions);
++			function parseResponseBody(body, foundStatus, trailerTarget, header, signal) {
++				return __asyncGenerator(this, arguments, function* parseResponseBody_1() {
++					const reader = (0, protocol_1.createEnvelopeReadableStream)(body).getReader();
++					if (foundStatus) {
++						// A grpc-status: 0 response header was present. This is a "trailers-only"
++						// response (a response without a body and no trailers).
++						//
++						// The spec seems to disallow a trailers-only response for status 0 - we are
++						// lenient and only verify that the body is empty.
++						//
++						// > [...] Trailers-Only is permitted for calls that produce an immediate error.
++						// See https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md
++						if (!(yield __await(reader.read())).done) {
++							throw "extra data for trailers-only";
++						}
++						return yield __await(void 0);
++					}
++					let trailerReceived = false;
++					for (; ;) {
++						const result = yield __await(reader.read());
++						if (result.done) {
++							break;
++						}
++						const { flags, data } = result.value;
++						if ((flags & protocol_grpc_web_1.trailerFlag) === protocol_grpc_web_1.trailerFlag) {
++							if (trailerReceived) {
++								throw "extra trailer";
++							}
++							trailerReceived = true;
++							const trailer = (0, protocol_grpc_web_1.trailerParse)(data);
++							(0, protocol_grpc_web_1.validateTrailer)(trailer, header);
++							trailer.forEach((value, key) => trailerTarget.set(key, value));
++							continue;
++						}
++						if (trailerReceived) {
++							throw "extra message";
++						}
++						yield yield __await(parse(data));
++					}
++					// Node wil not throw an AbortError on `read` if the
++					// signal is aborted before `getReader` is called.
++					// As a work around we check at the end and throw.
++					//
++					// Ref: https://github.com/nodejs/undici/issues/1940
++					if ("throwIfAborted" in signal) {
++						// We assume that implementations without `throwIfAborted` (old
++						// browsers) do honor aborted signals on `read`.
++						signal.throwIfAborted();
++					}
++					if (!trailerReceived) {
++						throw "missing trailer";
++					}
++				});
++			}
++			async function createRequestBody(input) {
++				var _a, e_1, _b, _c;
++				if (method.methodKind == "server_streaming") {
++					const r = await input[Symbol.asyncIterator]().next();
++					if (r.done == true) {
++						throw "missing request message";
++					}
++					return (0, protocol_1.encodeEnvelope)(0, serialize(r.value));
++				}
++				if (!assert_fetch_api_js_1.isRequestStreamsSupported) {
++					// If the browser does not support the duplex option, we need to
++					// buffer the entire request stream before sending it.
++					const chunks = [];
++					try {
++						for (var _d = true, input_1 = __asyncValues(input), input_1_1; input_1_1 = await input_1.next(), _a = input_1_1.done, !_a; _d = true) {
++							_c = input_1_1.value;
++							_d = false;
++							const chunk = _c;
++							chunks.push(serialize(chunk));
++						}
++					}
++					catch (e_1_1) { e_1 = { error: e_1_1 }; }
++					finally {
++						try {
++							if (!_d && !_a && (_b = input_1.return)) await _b.call(input_1);
++						}
++						finally { if (e_1) throw e_1.error; }
++					}
++					return (0, protocol_1.encodeEnvelope)(0, new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0)));
++				}
++				const stream = new ReadableStream({
++					async pull(controller) {
++						const r = await input[Symbol.asyncIterator]().next();
++						if (r.done == true) {
++							controller.close();
++							return;
++						}
++						const chunk = serialize(r.value);
++						controller.enqueue((0, protocol_1.encodeEnvelope)(0, chunk));
++					},
++				});
++				return stream;
++			}
++			timeoutMs =
++				timeoutMs === undefined
++					? options.defaultTimeoutMs
++					: timeoutMs <= 0
++						? undefined
++						: timeoutMs;
++			return (0, protocol_1.runStreamingCall)({
++				interceptors: options.interceptors,
++				signal,
++				timeoutMs,
++				req: {
++					stream: true,
++					service: method.parent,
++					method,
++					requestMethod: "POST",
++					url: (0, protocol_1.createMethodUrl)(options.baseUrl, method),
++					header: (0, protocol_grpc_web_1.requestHeader)(useBinaryFormat, timeoutMs, header, false),
++					contextValues: contextValues !== null && contextValues !== void 0 ? contextValues : (0, connect_1.createContextValues)(),
++					message: input,
++				},
++				next: async (req) => {
++					var _a;
++					const fetch = (_a = options.fetch) !== null && _a !== void 0 ? _a : globalThis.fetch;
++					const body = await createRequestBody(req.message);
++					const isStreamBody = body instanceof ReadableStream;
++					const fRes = await fetch(req.url, Object.assign(Object.assign(Object.assign({}, fetchOptions), { method: req.requestMethod, headers: req.header, signal: req.signal, body }), (isStreamBody ? { duplex: "half" } : {})));
++					const { foundStatus, headerError } = (0, protocol_grpc_web_1.validateResponse)(fRes.status, fRes.headers);
++					if (headerError != undefined) {
++						throw headerError;
++					}
++					if (!fRes.body) {
++						throw "missing response body";
++					}
++					const trailer = new Headers();
++					const res = Object.assign(Object.assign({}, req), { header: fRes.headers, trailer, message: parseResponseBody(fRes.body, foundStatus, trailer, fRes.headers, req.signal) });
++					return res;
++				},
++			});
++		},
++	};
+ }
+diff --git a/dist/esm/assert-fetch-api.d.ts b/dist/esm/assert-fetch-api.d.ts
+index 61a0e60b08aa79d41ab334a78bcfc55dcf953744..a4a598cc5af7d931f1d888011e4b61b543e65911 100644
+--- a/dist/esm/assert-fetch-api.d.ts
++++ b/dist/esm/assert-fetch-api.d.ts
+@@ -2,3 +2,9 @@
+  * Asserts that the fetch API is available.
+  */
+ export declare function assertFetchApi(): void;
++declare global {
++  interface RequestInit {
++    duplex?: string;
++  }
++}
++export declare const isRequestStreamsSupported: boolean;
+diff --git a/dist/esm/assert-fetch-api.js b/dist/esm/assert-fetch-api.js
+index 74fd4e8294b0dba59ed7127326717c5d2bd81283..e4de803d146c5051c00796df2ecb18f8a52a4aeb 100644
+--- a/dist/esm/assert-fetch-api.js
++++ b/dist/esm/assert-fetch-api.js
+@@ -15,10 +15,32 @@
+  * Asserts that the fetch API is available.
+  */
+ export function assertFetchApi() {
+-    try {
+-        new Headers();
+-    }
+-    catch (_) {
+-        throw new Error("connect-web requires the fetch API. Are you running on an old version of Node.js? Node.js is not supported in Connect for Web - please stay tuned for Connect for Node.");
+-    }
++	try {
++		new Headers();
++	}
++	catch (_) {
++		throw new Error("connect-web requires the fetch API. Are you running on an old version of Node.js? Node.js is not supported in Connect for Web - please stay tuned for Connect for Node.");
++	}
+ }
++// Check the browser is supporting the duplex option
++// for the request stream.
++// https://developer.chrome.com/docs/capabilities/web-apis/fetch-streaming-requests#feature_detection
++function supportsRequestStreams() {
++	try {
++		let duplexAccessed = false;
++		const hasContentType = new Request("", {
++			body: new ReadableStream(),
++			method: "POST",
++			get duplex() {
++				duplexAccessed = true;
++				return "half";
++			},
++		}).headers.has("Content-Type");
++		return duplexAccessed && !hasContentType;
++	}
++	catch (_a) {
++		return false;
++	}
++}
++export const isRequestStreamsSupported = supportsRequestStreams();
++
+diff --git a/dist/esm/connect-transport.js b/dist/esm/connect-transport.js
+index 31294b5571b3dddcfbdcad0bfeb5261378c3c517..dbac781d09a58afa6fd183a5bfa4b9be0a911985 100644
+--- a/dist/esm/connect-transport.js
++++ b/dist/esm/connect-transport.js
+@@ -11,27 +11,34 @@
+ // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ // See the License for the specific language governing permissions and
+ // limitations under the License.
+-var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
+-var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
+-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+-    var g = generator.apply(thisArg, _arguments || []), i, q = [];
+-    return i = Object.create((typeof AsyncIterator === "function" ? AsyncIterator : Object).prototype), verb("next"), verb("throw"), verb("return", awaitReturn), i[Symbol.asyncIterator] = function () { return this; }, i;
+-    function awaitReturn(f) { return function (v) { return Promise.resolve(v).then(f, reject); }; }
+-    function verb(n, f) { if (g[n]) { i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; if (f) i[n] = f(i[n]); } }
+-    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+-    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
+-    function fulfill(value) { resume("next", value); }
+-    function reject(value) { resume("throw", value); }
+-    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
++var __await = (this && this.__await) || function(v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
++var __asyncGenerator = (this && this.__asyncGenerator) || function(thisArg, _arguments, generator) {
++	if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
++	var g = generator.apply(thisArg, _arguments || []), i, q = [];
++	return i = Object.create((typeof AsyncIterator === "function" ? AsyncIterator : Object).prototype), verb("next"), verb("throw"), verb("return", awaitReturn), i[Symbol.asyncIterator] = function() { return this; }, i;
++	function awaitReturn(f) { return function(v) { return Promise.resolve(v).then(f, reject); }; }
++	function verb(n, f) { if (g[n]) { i[n] = function(v) { return new Promise(function(a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; if (f) i[n] = f(i[n]); } }
++	function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
++	function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
++	function fulfill(value) { resume("next", value); }
++	function reject(value) { resume("throw", value); }
++	function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
++};
++var __asyncValues = (this && this.__asyncValues) || function(o) {
++	if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
++	var m = o[Symbol.asyncIterator], i;
++	return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function() { return this; }, i);
++	function verb(n) { i[n] = o[n] && function(v) { return new Promise(function(resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
++	function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+ };
+ import { fromJson } from "@bufbuild/protobuf";
+ import { Code, ConnectError, appendHeaders, createContextValues, } from "@connectrpc/connect";
+ import { createClientMethodSerializers, createEnvelopeReadableStream, createMethodUrl, getJsonOptions, encodeEnvelope, runStreamingCall, runUnaryCall, compressedFlag, } from "@connectrpc/connect/protocol";
+ import { endStreamFlag, endStreamFromJson, errorFromJson, requestHeader, trailerDemux, transformConnectPostToGetRequest, validateResponse, } from "@connectrpc/connect/protocol-connect";
+-import { assertFetchApi } from "./assert-fetch-api.js";
++import { assertFetchApi, isRequestStreamsSupported, } from "./assert-fetch-api.js";
+ import { MethodOptions_IdempotencyLevel } from "@bufbuild/protobuf/wkt";
+ const fetchOptions = {
+-    redirect: "error",
++	redirect: "error",
+ };
+ /**
+  * Create a Transport for the Connect protocol, which makes unary and
+@@ -39,152 +46,187 @@ const fetchOptions = {
+  * API to make HTTP requests.
+  */
+ export function createConnectTransport(options) {
+-    var _a;
+-    assertFetchApi();
+-    const useBinaryFormat = (_a = options.useBinaryFormat) !== null && _a !== void 0 ? _a : false;
+-    return {
+-        async unary(method, signal, timeoutMs, header, message, contextValues) {
+-            const { serialize, parse } = createClientMethodSerializers(method, useBinaryFormat, options.jsonOptions, options.binaryOptions);
+-            timeoutMs =
+-                timeoutMs === undefined
+-                    ? options.defaultTimeoutMs
+-                    : timeoutMs <= 0
+-                        ? undefined
+-                        : timeoutMs;
+-            return await runUnaryCall({
+-                interceptors: options.interceptors,
+-                signal,
+-                timeoutMs,
+-                req: {
+-                    stream: false,
+-                    service: method.parent,
+-                    method,
+-                    requestMethod: "POST",
+-                    url: createMethodUrl(options.baseUrl, method),
+-                    header: requestHeader(method.methodKind, useBinaryFormat, timeoutMs, header, false),
+-                    contextValues: contextValues !== null && contextValues !== void 0 ? contextValues : createContextValues(),
+-                    message,
+-                },
+-                next: async (req) => {
+-                    var _a;
+-                    const useGet = options.useHttpGet === true &&
+-                        method.idempotency ===
+-                            MethodOptions_IdempotencyLevel.NO_SIDE_EFFECTS;
+-                    let body = null;
+-                    if (useGet) {
+-                        req = transformConnectPostToGetRequest(req, serialize(req.message), useBinaryFormat);
+-                    }
+-                    else {
+-                        body = serialize(req.message);
+-                    }
+-                    const fetch = (_a = options.fetch) !== null && _a !== void 0 ? _a : globalThis.fetch;
+-                    const response = await fetch(req.url, Object.assign(Object.assign({}, fetchOptions), { method: req.requestMethod, headers: req.header, signal: req.signal, body }));
+-                    const { isUnaryError, unaryError } = validateResponse(method.methodKind, useBinaryFormat, response.status, response.headers);
+-                    if (isUnaryError) {
+-                        throw errorFromJson((await response.json()), appendHeaders(...trailerDemux(response.headers)), unaryError);
+-                    }
+-                    const [demuxedHeader, demuxedTrailer] = trailerDemux(response.headers);
+-                    return {
+-                        stream: false,
+-                        service: method.parent,
+-                        method,
+-                        header: demuxedHeader,
+-                        message: useBinaryFormat
+-                            ? parse(new Uint8Array(await response.arrayBuffer()))
+-                            : fromJson(method.output, (await response.json()), getJsonOptions(options.jsonOptions)),
+-                        trailer: demuxedTrailer,
+-                    };
+-                },
+-            });
+-        },
+-        async stream(method, signal, timeoutMs, header, input, contextValues) {
+-            const { serialize, parse } = createClientMethodSerializers(method, useBinaryFormat, options.jsonOptions, options.binaryOptions);
+-            function parseResponseBody(body, trailerTarget, header, signal) {
+-                return __asyncGenerator(this, arguments, function* parseResponseBody_1() {
+-                    const reader = createEnvelopeReadableStream(body).getReader();
+-                    let endStreamReceived = false;
+-                    for (;;) {
+-                        const result = yield __await(reader.read());
+-                        if (result.done) {
+-                            break;
+-                        }
+-                        const { flags, data } = result.value;
+-                        if ((flags & compressedFlag) === compressedFlag) {
+-                            throw new ConnectError(`protocol error: received unsupported compressed output`, Code.Internal);
+-                        }
+-                        if ((flags & endStreamFlag) === endStreamFlag) {
+-                            endStreamReceived = true;
+-                            const endStream = endStreamFromJson(data);
+-                            if (endStream.error) {
+-                                const error = endStream.error;
+-                                header.forEach((value, key) => {
+-                                    error.metadata.append(key, value);
+-                                });
+-                                throw error;
+-                            }
+-                            endStream.metadata.forEach((value, key) => trailerTarget.set(key, value));
+-                            continue;
+-                        }
+-                        yield yield __await(parse(data));
+-                    }
+-                    // Node wil not throw an AbortError on `read` if the
+-                    // signal is aborted before `getReader` is called.
+-                    // As a work around we check at the end and throw.
+-                    //
+-                    // Ref: https://github.com/nodejs/undici/issues/1940
+-                    if ("throwIfAborted" in signal) {
+-                        // We assume that implementations without `throwIfAborted` (old
+-                        // browsers) do honor aborted signals on `read`.
+-                        signal.throwIfAborted();
+-                    }
+-                    if (!endStreamReceived) {
+-                        throw "missing EndStreamResponse";
+-                    }
+-                });
+-            }
+-            async function createRequestBody(input) {
+-                if (method.methodKind != "server_streaming") {
+-                    throw "The fetch API does not support streaming request bodies";
+-                }
+-                const r = await input[Symbol.asyncIterator]().next();
+-                if (r.done == true) {
+-                    throw "missing request message";
+-                }
+-                return encodeEnvelope(0, serialize(r.value));
+-            }
+-            timeoutMs =
+-                timeoutMs === undefined
+-                    ? options.defaultTimeoutMs
+-                    : timeoutMs <= 0
+-                        ? undefined
+-                        : timeoutMs;
+-            return await runStreamingCall({
+-                interceptors: options.interceptors,
+-                timeoutMs,
+-                signal,
+-                req: {
+-                    stream: true,
+-                    service: method.parent,
+-                    method,
+-                    requestMethod: "POST",
+-                    url: createMethodUrl(options.baseUrl, method),
+-                    header: requestHeader(method.methodKind, useBinaryFormat, timeoutMs, header, false),
+-                    contextValues: contextValues !== null && contextValues !== void 0 ? contextValues : createContextValues(),
+-                    message: input,
+-                },
+-                next: async (req) => {
+-                    var _a;
+-                    const fetch = (_a = options.fetch) !== null && _a !== void 0 ? _a : globalThis.fetch;
+-                    const fRes = await fetch(req.url, Object.assign(Object.assign({}, fetchOptions), { method: req.requestMethod, headers: req.header, signal: req.signal, body: await createRequestBody(req.message) }));
+-                    validateResponse(method.methodKind, useBinaryFormat, fRes.status, fRes.headers);
+-                    if (fRes.body === null) {
+-                        throw "missing response body";
+-                    }
+-                    const trailer = new Headers();
+-                    const res = Object.assign(Object.assign({}, req), { header: fRes.headers, trailer, message: parseResponseBody(fRes.body, trailer, fRes.headers, req.signal) });
+-                    return res;
+-                },
+-            });
+-        },
+-    };
++	var _a;
++	assertFetchApi();
++	const useBinaryFormat = (_a = options.useBinaryFormat) !== null && _a !== void 0 ? _a : false;
++	return {
++		async unary(method, signal, timeoutMs, header, message, contextValues) {
++			const { serialize, parse } = createClientMethodSerializers(method, useBinaryFormat, options.jsonOptions, options.binaryOptions);
++			timeoutMs =
++				timeoutMs === undefined
++					? options.defaultTimeoutMs
++					: timeoutMs <= 0
++						? undefined
++						: timeoutMs;
++			return await runUnaryCall({
++				interceptors: options.interceptors,
++				signal,
++				timeoutMs,
++				req: {
++					stream: false,
++					service: method.parent,
++					method,
++					requestMethod: "POST",
++					url: createMethodUrl(options.baseUrl, method),
++					header: requestHeader(method.methodKind, useBinaryFormat, timeoutMs, header, false),
++					contextValues: contextValues !== null && contextValues !== void 0 ? contextValues : createContextValues(),
++					message,
++				},
++				next: async (req) => {
++					var _a;
++					const useGet = options.useHttpGet === true &&
++						method.idempotency ===
++						MethodOptions_IdempotencyLevel.NO_SIDE_EFFECTS;
++					let body = null;
++					if (useGet) {
++						req = transformConnectPostToGetRequest(req, serialize(req.message), useBinaryFormat);
++					}
++					else {
++						body = serialize(req.message);
++					}
++					const fetch = (_a = options.fetch) !== null && _a !== void 0 ? _a : globalThis.fetch;
++					const response = await fetch(req.url, Object.assign(Object.assign({}, fetchOptions), { method: req.requestMethod, headers: req.header, signal: req.signal, body }));
++					const { isUnaryError, unaryError } = validateResponse(method.methodKind, useBinaryFormat, response.status, response.headers);
++					if (isUnaryError) {
++						throw errorFromJson((await response.json()), appendHeaders(...trailerDemux(response.headers)), unaryError);
++					}
++					const [demuxedHeader, demuxedTrailer] = trailerDemux(response.headers);
++					return {
++						stream: false,
++						service: method.parent,
++						method,
++						header: demuxedHeader,
++						message: useBinaryFormat
++							? parse(new Uint8Array(await response.arrayBuffer()))
++							: fromJson(method.output, (await response.json()), getJsonOptions(options.jsonOptions)),
++						trailer: demuxedTrailer,
++					};
++				},
++			});
++		},
++		async stream(method, signal, timeoutMs, header, input, contextValues) {
++			const { serialize, parse } = createClientMethodSerializers(method, useBinaryFormat, options.jsonOptions, options.binaryOptions);
++			function parseResponseBody(body, trailerTarget, header, signal) {
++				return __asyncGenerator(this, arguments, function* parseResponseBody_1() {
++					const reader = createEnvelopeReadableStream(body).getReader();
++					let endStreamReceived = false;
++					for (; ;) {
++						const result = yield __await(reader.read());
++						if (result.done) {
++							break;
++						}
++						const { flags, data } = result.value;
++						if ((flags & compressedFlag) === compressedFlag) {
++							throw new ConnectError(`protocol error: received unsupported compressed output`, Code.Internal);
++						}
++						if ((flags & endStreamFlag) === endStreamFlag) {
++							endStreamReceived = true;
++							const endStream = endStreamFromJson(data);
++							if (endStream.error) {
++								const error = endStream.error;
++								header.forEach((value, key) => {
++									error.metadata.append(key, value);
++								});
++								throw error;
++							}
++							endStream.metadata.forEach((value, key) => trailerTarget.set(key, value));
++							continue;
++						}
++						yield yield __await(parse(data));
++					}
++					// Node wil not throw an AbortError on `read` if the
++					// signal is aborted before `getReader` is called.
++					// As a work around we check at the end and throw.
++					//
++					// Ref: https://github.com/nodejs/undici/issues/1940
++					if ("throwIfAborted" in signal) {
++						// We assume that implementations without `throwIfAborted` (old
++						// browsers) do honor aborted signals on `read`.
++						signal.throwIfAborted();
++					}
++					if (!endStreamReceived) {
++						throw "missing EndStreamResponse";
++					}
++				});
++			}
++			async function createRequestBody(input) {
++				var _a, e_1, _b, _c;
++				if (method.methodKind == "server_streaming") {
++					const r = await input[Symbol.asyncIterator]().next();
++					if (r.done == true) {
++						throw "missing request message";
++					}
++					return encodeEnvelope(0, serialize(r.value));
++				}
++				if (!isRequestStreamsSupported) {
++					// If the browser does not support the duplex option, we need to
++					// buffer the entire request stream before sending it.
++					const chunks = [];
++					try {
++						for (var _d = true, input_1 = __asyncValues(input), input_1_1; input_1_1 = await input_1.next(), _a = input_1_1.done, !_a; _d = true) {
++							_c = input_1_1.value;
++							_d = false;
++							const chunk = _c;
++							chunks.push(serialize(chunk));
++						}
++					}
++					catch (e_1_1) { e_1 = { error: e_1_1 }; }
++					finally {
++						try {
++							if (!_d && !_a && (_b = input_1.return)) await _b.call(input_1);
++						}
++						finally { if (e_1) throw e_1.error; }
++					}
++					return encodeEnvelope(0, new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0)));
++				}
++				const stream = new ReadableStream({
++					async pull(controller) {
++						const r = await input[Symbol.asyncIterator]().next();
++						if (r.done == true) {
++							controller.close();
++							return;
++						}
++						const chunk = serialize(r.value);
++						controller.enqueue(encodeEnvelope(0, chunk));
++					},
++				});
++				return stream;
++			}
++			timeoutMs =
++				timeoutMs === undefined
++					? options.defaultTimeoutMs
++					: timeoutMs <= 0
++						? undefined
++						: timeoutMs;
++			return await runStreamingCall({
++				interceptors: options.interceptors,
++				timeoutMs,
++				signal,
++				req: {
++					stream: true,
++					service: method.parent,
++					method,
++					requestMethod: "POST",
++					url: createMethodUrl(options.baseUrl, method),
++					header: requestHeader(method.methodKind, useBinaryFormat, timeoutMs, header, false),
++					contextValues: contextValues !== null && contextValues !== void 0 ? contextValues : createContextValues(),
++					message: input,
++				},
++				next: async (req) => {
++					var _a;
++					const fetch = (_a = options.fetch) !== null && _a !== void 0 ? _a : globalThis.fetch;
++					const body = await createRequestBody(req.message);
++					const isStreamBody = body instanceof ReadableStream;
++					const fRes = await fetch(req.url, Object.assign(Object.assign(Object.assign({}, fetchOptions), { method: req.requestMethod, headers: req.header, signal: req.signal, body }), (isStreamBody ? { duplex: "half" } : {})));
++					validateResponse(method.methodKind, useBinaryFormat, fRes.status, fRes.headers);
++					if (fRes.body === null) {
++						throw "missing response body";
++					}
++					const trailer = new Headers();
++					const res = Object.assign(Object.assign({}, req), { header: fRes.headers, trailer, message: parseResponseBody(fRes.body, trailer, fRes.headers, req.signal) });
++					return res;
++				},
++			});
++		},
++	};
+ }
+diff --git a/dist/esm/fetch.spec.d.ts b/dist/esm/fetch.spec.d.ts
+new file mode 100644
+index 0000000000000000000000000000000000000000..cb0ff5c3b541f646105198ee23ac0fc3d805023e
+--- /dev/null
++++ b/dist/esm/fetch.spec.d.ts
+@@ -0,0 +1 @@
++export {};
+diff --git a/dist/esm/fetch.spec.js b/dist/esm/fetch.spec.js
+new file mode 100644
+index 0000000000000000000000000000000000000000..43ad4e9637c6ce9aa7354e86fad86daa6add235a
+--- /dev/null
++++ b/dist/esm/fetch.spec.js
+@@ -0,0 +1,117 @@
++// Copyright 2021-2025 The Connect Authors
++//
++// Licensed under the Apache License, Version 2.0 (the "License");
++// you may not use this file except in compliance with the License.
++// You may obtain a copy of the License at
++//
++//      http://www.apache.org/licenses/LICENSE-2.0
++//
++// Unless required by applicable law or agreed to in writing, software
++// distributed under the License is distributed on an "AS IS" BASIS,
++// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++// See the License for the specific language governing permissions and
++// limitations under the License.
++import { ConformanceService, UnaryRequestSchema, UnaryResponseSchema, } from "@connectrpc/connect-conformance";
++import { createConnectTransport } from "./connect-transport.js";
++import { createGrpcWebTransport } from "./grpc-web-transport.js";
++import { create, toBinary, toJsonString } from "@bufbuild/protobuf";
++describe("custom fetch", () => {
++	let originFetch;
++	beforeEach(() => {
++		originFetch = globalThis.fetch;
++	});
++	afterEach(() => {
++		globalThis.fetch = originFetch;
++	});
++	describe("with Connect transport", () => {
++		it("should only call Response#json with the JSON format", async () => {
++			const response = new Response(toJsonString(UnaryResponseSchema, create(UnaryResponseSchema)), {
++				headers: {
++					"Content-Type": "application/json",
++				},
++			});
++			spyOn(response, "arrayBuffer").and.callThrough();
++			spyOn(response, "json").and.callThrough();
++			const transport = createConnectTransport({
++				baseUrl: "https://example.com",
++				fetch: () => Promise.resolve(response),
++			});
++			await transport.unary(ConformanceService.method.unary, undefined, undefined, undefined, create(UnaryRequestSchema));
++			expect(response.json).toHaveBeenCalledTimes(1);
++			expect(response.arrayBuffer).toHaveBeenCalledTimes(0);
++		});
++		it("should only call Response#arrayBuffer with the binary format on the happy path", async () => {
++			const response = new Response(toBinary(UnaryResponseSchema, create(UnaryResponseSchema)), {
++				headers: {
++					"Content-Type": "application/proto",
++				},
++			});
++			spyOn(response, "arrayBuffer").and.callThrough();
++			spyOn(response, "json").and.callThrough();
++			const transport = createConnectTransport({
++				fetch: () => Promise.resolve(response),
++				baseUrl: "https://example.com",
++				useBinaryFormat: true,
++			});
++			await transport.unary(ConformanceService.method.unary, undefined, undefined, undefined, create(UnaryRequestSchema));
++			expect(response.json).toHaveBeenCalledTimes(0);
++			expect(response.arrayBuffer).toHaveBeenCalledTimes(1);
++		});
++		it("should call Response#json with the binary format for an error response", async () => {
++			const response = new Response(JSON.stringify({
++				code: "permission_denied",
++				message: "foobar",
++			}), {
++				status: 403,
++				headers: {
++					"Content-Type": "application/json",
++				},
++			});
++			spyOn(response, "arrayBuffer").and.callThrough();
++			spyOn(response, "json").and.callThrough();
++			const transport = createConnectTransport({
++				fetch: () => Promise.resolve(response),
++				baseUrl: "https://example.com",
++				useBinaryFormat: true,
++			});
++			await expectAsync(transport.unary(ConformanceService.method.unary, undefined, undefined, undefined, create(UnaryRequestSchema))).toBeRejectedWithError(/\[permission_denied] foobar/);
++			expect(response.json).toHaveBeenCalledTimes(1);
++			expect(response.arrayBuffer).toHaveBeenCalledTimes(0);
++		});
++		it("should should defer resolving fetch until calling endpoint", async () => {
++			const response = new Response(toJsonString(UnaryResponseSchema, create(UnaryResponseSchema)), {
++				headers: {
++					"Content-Type": "application/json",
++				},
++			});
++			spyOn(response, "arrayBuffer").and.callThrough();
++			spyOn(response, "json").and.callThrough();
++			const transport = createConnectTransport({
++				baseUrl: "https://example.com",
++			});
++			// Patch globalThis.fetch to mimic a polyfill or patch
++			globalThis.fetch = () => Promise.resolve(response);
++			await transport.unary(ConformanceService.method.unary, undefined, undefined, undefined, create(UnaryRequestSchema));
++			expect(response.json).toHaveBeenCalledTimes(1);
++			expect(response.arrayBuffer).toHaveBeenCalledTimes(0);
++		});
++	});
++	describe("with gRPC-web transport", () => {
++		it("should should defer resolving fetch until calling endpoint", async () => {
++			const response = new Response(toJsonString(UnaryResponseSchema, create(UnaryResponseSchema)), {
++				headers: {
++					"Content-Type": "application/json",
++				},
++			});
++			spyOn(response, "arrayBuffer").and.callThrough();
++			spyOn(response, "json").and.callThrough();
++			const transport = createGrpcWebTransport({
++				baseUrl: "https://example.com",
++				useBinaryFormat: false,
++			});
++			// Patch globalThis.fetch to mimic a polyfill or patch
++			globalThis.fetch = () => Promise.reject("test-error-raised-from-patched-fetch");
++			await expectAsync(transport.unary(ConformanceService.method.unary, undefined, undefined, undefined, create(UnaryRequestSchema))).toBeRejectedWithError(/test-error-raised-from-patched-fetch/);
++		});
++	});
++});
+diff --git a/dist/esm/grpc-web-transport.d.ts b/dist/esm/grpc-web-transport.d.ts
+index 179aba82dd479bf4425975565ba2e290b28b9116..bdc661a917c20a7b41115c335343b2582a53de63 100644
+--- a/dist/esm/grpc-web-transport.d.ts
++++ b/dist/esm/grpc-web-transport.d.ts
+@@ -1,4 +1,9 @@
+-import type { BinaryReadOptions, BinaryWriteOptions, JsonReadOptions, JsonWriteOptions } from "@bufbuild/protobuf";
++import type {
++  BinaryReadOptions,
++  BinaryWriteOptions,
++  JsonReadOptions,
++  JsonWriteOptions,
++} from "@bufbuild/protobuf";
+ import type { Interceptor, Transport } from "@connectrpc/connect";
+ /**
+  * Options used to configure the gRPC-web transport.
+@@ -6,51 +11,51 @@ import type { Interceptor, Transport } from "@connectrpc/connect";
+  * See createGrpcWebTransport().
+  */
+ export interface GrpcWebTransportOptions {
+-    /**
+-     * Base URI for all HTTP requests.
+-     *
+-     * Requests will be made to <baseUrl>/<package>.<service>/method
+-     *
+-     * Example: `baseUrl: "https://example.com/my-api"`
+-     *
+-     * This will make a `POST /my-api/my_package.MyService/Foo` to
+-     * `example.com` via HTTPS.
+-     *
+-     * If your API is served from the same domain as your site, use
+-     * `baseUrl: window.location.origin` or simply "/".
+-     */
+-    baseUrl: string;
+-    /**
+-     * By default, clients use the binary format for gRPC-web, because
+-     * not all gRPC-web implementations support JSON.
+-     */
+-    useBinaryFormat?: boolean;
+-    /**
+-     * Interceptors that should be applied to all calls running through
+-     * this transport. See the Interceptor type for details.
+-     */
+-    interceptors?: Interceptor[];
+-    /**
+-     * Options for the JSON format.
+-     * By default, unknown fields are ignored.
+-     */
+-    jsonOptions?: Partial<JsonReadOptions & JsonWriteOptions>;
+-    /**
+-     * Options for the binary wire format.
+-     */
+-    binaryOptions?: Partial<BinaryReadOptions & BinaryWriteOptions>;
+-    /**
+-     * Optional override of the fetch implementation used by the transport.
+-     *
+-     * This option can be used to set fetch options such as "credentials".
+-     */
+-    fetch?: typeof globalThis.fetch;
+-    /**
+-     * The timeout in milliseconds to apply to all requests.
+-     *
+-     * This can be overridden on a per-request basis by passing a timeoutMs.
+-     */
+-    defaultTimeoutMs?: number;
++  /**
++   * Base URI for all HTTP requests.
++   *
++   * Requests will be made to <baseUrl>/<package>.<service>/method
++   *
++   * Example: `baseUrl: "https://example.com/my-api"`
++   *
++   * This will make a `POST /my-api/my_package.MyService/Foo` to
++   * `example.com` via HTTPS.
++   *
++   * If your API is served from the same domain as your site, use
++   * `baseUrl: window.location.origin` or simply "/".
++   */
++  baseUrl: string;
++  /**
++   * By default, clients use the binary format for gRPC-web, because
++   * not all gRPC-web implementations support JSON.
++   */
++  useBinaryFormat?: boolean;
++  /**
++   * Interceptors that should be applied to all calls running through
++   * this transport. See the Interceptor type for details.
++   */
++  interceptors?: Interceptor[];
++  /**
++   * Options for the JSON format.
++   * By default, unknown fields are ignored.
++   */
++  jsonOptions?: Partial<JsonReadOptions & JsonWriteOptions>;
++  /**
++   * Options for the binary wire format.
++   */
++  binaryOptions?: Partial<BinaryReadOptions & BinaryWriteOptions>;
++  /**
++   * Optional override of the fetch implementation used by the transport.
++   *
++   * This option can be used to set fetch options such as "credentials".
++   */
++  fetch?: typeof globalThis.fetch;
++  /**
++   * The timeout in milliseconds to apply to all requests.
++   *
++   * This can be overridden on a per-request basis by passing a timeoutMs.
++   */
++  defaultTimeoutMs?: number;
+ }
+ /**
+  * Create a Transport for the gRPC-web protocol. The protocol encodes
+@@ -62,4 +67,6 @@ export interface GrpcWebTransportOptions {
+  * which applies base64 encoding to the request and response bodies to
+  * support reading streaming responses from an XMLHttpRequest.
+  */
+-export declare function createGrpcWebTransport(options: GrpcWebTransportOptions): Transport;
++export declare function createGrpcWebTransport(
++  options: GrpcWebTransportOptions,
++): Transport;
+diff --git a/dist/esm/grpc-web-transport.js b/dist/esm/grpc-web-transport.js
+index 9aebd232727a7b32c9dbd6857bc4c74dd24fee03..ae7c1fdfbae3c841728b6e72131446fa95cb032b 100644
+--- a/dist/esm/grpc-web-transport.js
++++ b/dist/esm/grpc-web-transport.js
+@@ -11,25 +11,32 @@
+ // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ // See the License for the specific language governing permissions and
+ // limitations under the License.
+-var __await = (this && this.__await) || function (v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
+-var __asyncGenerator = (this && this.__asyncGenerator) || function (thisArg, _arguments, generator) {
+-    if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
+-    var g = generator.apply(thisArg, _arguments || []), i, q = [];
+-    return i = Object.create((typeof AsyncIterator === "function" ? AsyncIterator : Object).prototype), verb("next"), verb("throw"), verb("return", awaitReturn), i[Symbol.asyncIterator] = function () { return this; }, i;
+-    function awaitReturn(f) { return function (v) { return Promise.resolve(v).then(f, reject); }; }
+-    function verb(n, f) { if (g[n]) { i[n] = function (v) { return new Promise(function (a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; if (f) i[n] = f(i[n]); } }
+-    function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
+-    function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
+-    function fulfill(value) { resume("next", value); }
+-    function reject(value) { resume("throw", value); }
+-    function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
++var __await = (this && this.__await) || function(v) { return this instanceof __await ? (this.v = v, this) : new __await(v); }
++var __asyncGenerator = (this && this.__asyncGenerator) || function(thisArg, _arguments, generator) {
++	if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
++	var g = generator.apply(thisArg, _arguments || []), i, q = [];
++	return i = Object.create((typeof AsyncIterator === "function" ? AsyncIterator : Object).prototype), verb("next"), verb("throw"), verb("return", awaitReturn), i[Symbol.asyncIterator] = function() { return this; }, i;
++	function awaitReturn(f) { return function(v) { return Promise.resolve(v).then(f, reject); }; }
++	function verb(n, f) { if (g[n]) { i[n] = function(v) { return new Promise(function(a, b) { q.push([n, v, a, b]) > 1 || resume(n, v); }); }; if (f) i[n] = f(i[n]); } }
++	function resume(n, v) { try { step(g[n](v)); } catch (e) { settle(q[0][3], e); } }
++	function step(r) { r.value instanceof __await ? Promise.resolve(r.value.v).then(fulfill, reject) : settle(q[0][2], r); }
++	function fulfill(value) { resume("next", value); }
++	function reject(value) { resume("throw", value); }
++	function settle(f, v) { if (f(v), q.shift(), q.length) resume(q[0][0], q[0][1]); }
++};
++var __asyncValues = (this && this.__asyncValues) || function(o) {
++	if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
++	var m = o[Symbol.asyncIterator], i;
++	return m ? m.call(o) : (o = typeof __values === "function" ? __values(o) : o[Symbol.iterator](), i = {}, verb("next"), verb("throw"), verb("return"), i[Symbol.asyncIterator] = function() { return this; }, i);
++	function verb(n) { i[n] = o[n] && function(v) { return new Promise(function(resolve, reject) { v = o[n](v), settle(resolve, reject, v.done, v.value); }); }; }
++	function settle(resolve, reject, d, v) { Promise.resolve(v).then(function(v) { resolve({ value: v, done: d }); }, reject); }
+ };
+ import { createContextValues, ConnectError, Code } from "@connectrpc/connect";
+ import { compressedFlag, createClientMethodSerializers, createEnvelopeReadableStream, createMethodUrl, encodeEnvelope, runStreamingCall, runUnaryCall, } from "@connectrpc/connect/protocol";
+ import { headerGrpcStatus, requestHeader, trailerFlag, trailerParse, validateResponse, validateTrailer, } from "@connectrpc/connect/protocol-grpc-web";
+-import { assertFetchApi } from "./assert-fetch-api.js";
++import { assertFetchApi, isRequestStreamsSupported, } from "./assert-fetch-api.js";
+ const fetchOptions = {
+-    redirect: "error",
++	redirect: "error",
+ };
+ /**
+  * Create a Transport for the gRPC-web protocol. The protocol encodes
+@@ -42,193 +49,228 @@ const fetchOptions = {
+  * support reading streaming responses from an XMLHttpRequest.
+  */
+ export function createGrpcWebTransport(options) {
+-    var _a;
+-    assertFetchApi();
+-    const useBinaryFormat = (_a = options.useBinaryFormat) !== null && _a !== void 0 ? _a : true;
+-    return {
+-        async unary(method, signal, timeoutMs, header, message, contextValues) {
+-            const { serialize, parse } = createClientMethodSerializers(method, useBinaryFormat, options.jsonOptions, options.binaryOptions);
+-            timeoutMs =
+-                timeoutMs === undefined
+-                    ? options.defaultTimeoutMs
+-                    : timeoutMs <= 0
+-                        ? undefined
+-                        : timeoutMs;
+-            return await runUnaryCall({
+-                interceptors: options.interceptors,
+-                signal,
+-                timeoutMs,
+-                req: {
+-                    stream: false,
+-                    service: method.parent,
+-                    method,
+-                    requestMethod: "POST",
+-                    url: createMethodUrl(options.baseUrl, method),
+-                    header: requestHeader(useBinaryFormat, timeoutMs, header, false),
+-                    contextValues: contextValues !== null && contextValues !== void 0 ? contextValues : createContextValues(),
+-                    message,
+-                },
+-                next: async (req) => {
+-                    var _a;
+-                    const fetch = (_a = options.fetch) !== null && _a !== void 0 ? _a : globalThis.fetch;
+-                    const response = await fetch(req.url, Object.assign(Object.assign({}, fetchOptions), { method: req.requestMethod, headers: req.header, signal: req.signal, body: encodeEnvelope(0, serialize(req.message)) }));
+-                    const { headerError } = validateResponse(response.status, response.headers);
+-                    if (!response.body) {
+-                        if (headerError !== undefined)
+-                            throw headerError;
+-                        throw "missing response body";
+-                    }
+-                    const reader = createEnvelopeReadableStream(response.body).getReader();
+-                    let trailer;
+-                    let message;
+-                    for (;;) {
+-                        const r = await reader.read();
+-                        if (r.done) {
+-                            break;
+-                        }
+-                        const { flags, data } = r.value;
+-                        if ((flags & compressedFlag) === compressedFlag) {
+-                            throw new ConnectError(`protocol error: received unsupported compressed output`, Code.Internal);
+-                        }
+-                        if (flags === trailerFlag) {
+-                            if (trailer !== undefined) {
+-                                throw "extra trailer";
+-                            }
+-                            // Unary responses require exactly one response message, but in
+-                            // case of an error, it is perfectly valid to have a response body
+-                            // that only contains error trailers.
+-                            trailer = trailerParse(data);
+-                            continue;
+-                        }
+-                        if (message !== undefined) {
+-                            throw new ConnectError("extra message", Code.Unimplemented);
+-                        }
+-                        message = parse(data);
+-                    }
+-                    if (trailer === undefined) {
+-                        if (headerError !== undefined)
+-                            throw headerError;
+-                        throw new ConnectError("missing trailer", response.headers.has(headerGrpcStatus)
+-                            ? Code.Unimplemented
+-                            : Code.Unknown);
+-                    }
+-                    validateTrailer(trailer, response.headers);
+-                    if (message === undefined) {
+-                        throw new ConnectError("missing message", trailer.has(headerGrpcStatus) ? Code.Unimplemented : Code.Unknown);
+-                    }
+-                    return {
+-                        stream: false,
+-                        service: method.parent,
+-                        method,
+-                        header: response.headers,
+-                        message,
+-                        trailer,
+-                    };
+-                },
+-            });
+-        },
+-        async stream(method, signal, timeoutMs, header, input, contextValues) {
+-            const { serialize, parse } = createClientMethodSerializers(method, useBinaryFormat, options.jsonOptions, options.binaryOptions);
+-            function parseResponseBody(body, foundStatus, trailerTarget, header, signal) {
+-                return __asyncGenerator(this, arguments, function* parseResponseBody_1() {
+-                    const reader = createEnvelopeReadableStream(body).getReader();
+-                    if (foundStatus) {
+-                        // A grpc-status: 0 response header was present. This is a "trailers-only"
+-                        // response (a response without a body and no trailers).
+-                        //
+-                        // The spec seems to disallow a trailers-only response for status 0 - we are
+-                        // lenient and only verify that the body is empty.
+-                        //
+-                        // > [...] Trailers-Only is permitted for calls that produce an immediate error.
+-                        // See https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md
+-                        if (!(yield __await(reader.read())).done) {
+-                            throw "extra data for trailers-only";
+-                        }
+-                        return yield __await(void 0);
+-                    }
+-                    let trailerReceived = false;
+-                    for (;;) {
+-                        const result = yield __await(reader.read());
+-                        if (result.done) {
+-                            break;
+-                        }
+-                        const { flags, data } = result.value;
+-                        if ((flags & trailerFlag) === trailerFlag) {
+-                            if (trailerReceived) {
+-                                throw "extra trailer";
+-                            }
+-                            trailerReceived = true;
+-                            const trailer = trailerParse(data);
+-                            validateTrailer(trailer, header);
+-                            trailer.forEach((value, key) => trailerTarget.set(key, value));
+-                            continue;
+-                        }
+-                        if (trailerReceived) {
+-                            throw "extra message";
+-                        }
+-                        yield yield __await(parse(data));
+-                    }
+-                    // Node wil not throw an AbortError on `read` if the
+-                    // signal is aborted before `getReader` is called.
+-                    // As a work around we check at the end and throw.
+-                    //
+-                    // Ref: https://github.com/nodejs/undici/issues/1940
+-                    if ("throwIfAborted" in signal) {
+-                        // We assume that implementations without `throwIfAborted` (old
+-                        // browsers) do honor aborted signals on `read`.
+-                        signal.throwIfAborted();
+-                    }
+-                    if (!trailerReceived) {
+-                        throw "missing trailer";
+-                    }
+-                });
+-            }
+-            async function createRequestBody(input) {
+-                if (method.methodKind != "server_streaming") {
+-                    throw "The fetch API does not support streaming request bodies";
+-                }
+-                const r = await input[Symbol.asyncIterator]().next();
+-                if (r.done == true) {
+-                    throw "missing request message";
+-                }
+-                return encodeEnvelope(0, serialize(r.value));
+-            }
+-            timeoutMs =
+-                timeoutMs === undefined
+-                    ? options.defaultTimeoutMs
+-                    : timeoutMs <= 0
+-                        ? undefined
+-                        : timeoutMs;
+-            return runStreamingCall({
+-                interceptors: options.interceptors,
+-                signal,
+-                timeoutMs,
+-                req: {
+-                    stream: true,
+-                    service: method.parent,
+-                    method,
+-                    requestMethod: "POST",
+-                    url: createMethodUrl(options.baseUrl, method),
+-                    header: requestHeader(useBinaryFormat, timeoutMs, header, false),
+-                    contextValues: contextValues !== null && contextValues !== void 0 ? contextValues : createContextValues(),
+-                    message: input,
+-                },
+-                next: async (req) => {
+-                    var _a;
+-                    const fetch = (_a = options.fetch) !== null && _a !== void 0 ? _a : globalThis.fetch;
+-                    const fRes = await fetch(req.url, Object.assign(Object.assign({}, fetchOptions), { method: req.requestMethod, headers: req.header, signal: req.signal, body: await createRequestBody(req.message) }));
+-                    const { foundStatus, headerError } = validateResponse(fRes.status, fRes.headers);
+-                    if (headerError != undefined) {
+-                        throw headerError;
+-                    }
+-                    if (!fRes.body) {
+-                        throw "missing response body";
+-                    }
+-                    const trailer = new Headers();
+-                    const res = Object.assign(Object.assign({}, req), { header: fRes.headers, trailer, message: parseResponseBody(fRes.body, foundStatus, trailer, fRes.headers, req.signal) });
+-                    return res;
+-                },
+-            });
+-        },
+-    };
++	var _a;
++	assertFetchApi();
++	const useBinaryFormat = (_a = options.useBinaryFormat) !== null && _a !== void 0 ? _a : true;
++	return {
++		async unary(method, signal, timeoutMs, header, message, contextValues) {
++			const { serialize, parse } = createClientMethodSerializers(method, useBinaryFormat, options.jsonOptions, options.binaryOptions);
++			timeoutMs =
++				timeoutMs === undefined
++					? options.defaultTimeoutMs
++					: timeoutMs <= 0
++						? undefined
++						: timeoutMs;
++			return await runUnaryCall({
++				interceptors: options.interceptors,
++				signal,
++				timeoutMs,
++				req: {
++					stream: false,
++					service: method.parent,
++					method,
++					requestMethod: "POST",
++					url: createMethodUrl(options.baseUrl, method),
++					header: requestHeader(useBinaryFormat, timeoutMs, header, false),
++					contextValues: contextValues !== null && contextValues !== void 0 ? contextValues : createContextValues(),
++					message,
++				},
++				next: async (req) => {
++					var _a;
++					const fetch = (_a = options.fetch) !== null && _a !== void 0 ? _a : globalThis.fetch;
++					const response = await fetch(req.url, Object.assign(Object.assign({}, fetchOptions), { method: req.requestMethod, headers: req.header, signal: req.signal, body: encodeEnvelope(0, serialize(req.message)) }));
++					const { headerError } = validateResponse(response.status, response.headers);
++					if (!response.body) {
++						if (headerError !== undefined)
++							throw headerError;
++						throw "missing response body";
++					}
++					const reader = createEnvelopeReadableStream(response.body).getReader();
++					let trailer;
++					let message;
++					for (; ;) {
++						const r = await reader.read();
++						if (r.done) {
++							break;
++						}
++						const { flags, data } = r.value;
++						if ((flags & compressedFlag) === compressedFlag) {
++							throw new ConnectError(`protocol error: received unsupported compressed output`, Code.Internal);
++						}
++						if (flags === trailerFlag) {
++							if (trailer !== undefined) {
++								throw "extra trailer";
++							}
++							// Unary responses require exactly one response message, but in
++							// case of an error, it is perfectly valid to have a response body
++							// that only contains error trailers.
++							trailer = trailerParse(data);
++							continue;
++						}
++						if (message !== undefined) {
++							throw new ConnectError("extra message", Code.Unimplemented);
++						}
++						message = parse(data);
++					}
++					if (trailer === undefined) {
++						if (headerError !== undefined)
++							throw headerError;
++						throw new ConnectError("missing trailer", response.headers.has(headerGrpcStatus)
++							? Code.Unimplemented
++							: Code.Unknown);
++					}
++					validateTrailer(trailer, response.headers);
++					if (message === undefined) {
++						throw new ConnectError("missing message", trailer.has(headerGrpcStatus) ? Code.Unimplemented : Code.Unknown);
++					}
++					return {
++						stream: false,
++						service: method.parent,
++						method,
++						header: response.headers,
++						message,
++						trailer,
++					};
++				},
++			});
++		},
++		async stream(method, signal, timeoutMs, header, input, contextValues) {
++			const { serialize, parse } = createClientMethodSerializers(method, useBinaryFormat, options.jsonOptions, options.binaryOptions);
++			function parseResponseBody(body, foundStatus, trailerTarget, header, signal) {
++				return __asyncGenerator(this, arguments, function* parseResponseBody_1() {
++					const reader = createEnvelopeReadableStream(body).getReader();
++					if (foundStatus) {
++						// A grpc-status: 0 response header was present. This is a "trailers-only"
++						// response (a response without a body and no trailers).
++						//
++						// The spec seems to disallow a trailers-only response for status 0 - we are
++						// lenient and only verify that the body is empty.
++						//
++						// > [...] Trailers-Only is permitted for calls that produce an immediate error.
++						// See https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md
++						if (!(yield __await(reader.read())).done) {
++							throw "extra data for trailers-only";
++						}
++						return yield __await(void 0);
++					}
++					let trailerReceived = false;
++					for (; ;) {
++						const result = yield __await(reader.read());
++						if (result.done) {
++							break;
++						}
++						const { flags, data } = result.value;
++						if ((flags & trailerFlag) === trailerFlag) {
++							if (trailerReceived) {
++								throw "extra trailer";
++							}
++							trailerReceived = true;
++							const trailer = trailerParse(data);
++							validateTrailer(trailer, header);
++							trailer.forEach((value, key) => trailerTarget.set(key, value));
++							continue;
++						}
++						if (trailerReceived) {
++							throw "extra message";
++						}
++						yield yield __await(parse(data));
++					}
++					// Node wil not throw an AbortError on `read` if the
++					// signal is aborted before `getReader` is called.
++					// As a work around we check at the end and throw.
++					//
++					// Ref: https://github.com/nodejs/undici/issues/1940
++					if ("throwIfAborted" in signal) {
++						// We assume that implementations without `throwIfAborted` (old
++						// browsers) do honor aborted signals on `read`.
++						signal.throwIfAborted();
++					}
++					if (!trailerReceived) {
++						throw "missing trailer";
++					}
++				});
++			}
++			async function createRequestBody(input) {
++				var _a, e_1, _b, _c;
++				if (method.methodKind == "server_streaming") {
++					const r = await input[Symbol.asyncIterator]().next();
++					if (r.done == true) {
++						throw "missing request message";
++					}
++					return encodeEnvelope(0, serialize(r.value));
++				}
++				if (!isRequestStreamsSupported) {
++					// If the browser does not support the duplex option, we need to
++					// buffer the entire request stream before sending it.
++					const chunks = [];
++					try {
++						for (var _d = true, input_1 = __asyncValues(input), input_1_1; input_1_1 = await input_1.next(), _a = input_1_1.done, !_a; _d = true) {
++							_c = input_1_1.value;
++							_d = false;
++							const chunk = _c;
++							chunks.push(serialize(chunk));
++						}
++					}
++					catch (e_1_1) { e_1 = { error: e_1_1 }; }
++					finally {
++						try {
++							if (!_d && !_a && (_b = input_1.return)) await _b.call(input_1);
++						}
++						finally { if (e_1) throw e_1.error; }
++					}
++					return encodeEnvelope(0, new Uint8Array(chunks.reduce((acc, chunk) => acc + chunk.length, 0)));
++				}
++				const stream = new ReadableStream({
++					async pull(controller) {
++						const r = await input[Symbol.asyncIterator]().next();
++						if (r.done == true) {
++							controller.close();
++							return;
++						}
++						const chunk = serialize(r.value);
++						controller.enqueue(encodeEnvelope(0, chunk));
++					},
++				});
++				return stream;
++			}
++			timeoutMs =
++				timeoutMs === undefined
++					? options.defaultTimeoutMs
++					: timeoutMs <= 0
++						? undefined
++						: timeoutMs;
++			return runStreamingCall({
++				interceptors: options.interceptors,
++				signal,
++				timeoutMs,
++				req: {
++					stream: true,
++					service: method.parent,
++					method,
++					requestMethod: "POST",
++					url: createMethodUrl(options.baseUrl, method),
++					header: requestHeader(useBinaryFormat, timeoutMs, header, false),
++					contextValues: contextValues !== null && contextValues !== void 0 ? contextValues : createContextValues(),
++					message: input,
++				},
++				next: async (req) => {
++					var _a;
++					const fetch = (_a = options.fetch) !== null && _a !== void 0 ? _a : globalThis.fetch;
++					const body = await createRequestBody(req.message);
++					const isStreamBody = body instanceof ReadableStream;
++					const fRes = await fetch(req.url, Object.assign(Object.assign(Object.assign({}, fetchOptions), { method: req.requestMethod, headers: req.header, signal: req.signal, body }), (isStreamBody ? { duplex: "half" } : {})));
++					const { foundStatus, headerError } = validateResponse(fRes.status, fRes.headers);
++					if (headerError != undefined) {
++						throw headerError;
++					}
++					if (!fRes.body) {
++						throw "missing response body";
++					}
++					const trailer = new Headers();
++					const res = Object.assign(Object.assign({}, req), { header: fRes.headers, trailer, message: parseResponseBody(fRes.body, foundStatus, trailer, fRes.headers, req.signal) });
++					return res;
++				},
++			});
++		},
++	};
+ }
