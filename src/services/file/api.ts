@@ -1,6 +1,10 @@
 import { createClient } from "@connectrpc/connect";
 import { FileService } from "../../gen/fawa/file/v1/file_pb";
-import { transport } from "../../common/transport.ts";
+import { createConnectTransport } from "@connectrpc/connect-web";
+
+const transport = createConnectTransport({
+  baseUrl: import.meta.env.VITE_FILE_SERVICE_URL || 'https://localhost:8080',
+});
 
 const client = createClient(FileService, transport);
 
