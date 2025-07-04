@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { create } from "@bufbuild/protobuf";
 import { fileClient } from "../api";
-import type { SendFileRequest } from "../../../gen/fawa/file/v1/file_pb.ts";
 import { SendFileRequestSchema } from "../../../gen/fawa/file/v1/file_pb.ts";
 
 export function useFileService() {
