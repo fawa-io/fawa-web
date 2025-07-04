@@ -1,10 +1,8 @@
-import { useState } from 'react';
+
 import { useGreetService } from '../hooks/useGreetService';
 import './GreetConsole.css';
 
 export function GreetConsole() {
-    const [name, setName] = useState('World');
-
     const {
         logs,
         clearLogs,
@@ -14,30 +12,30 @@ export function GreetConsole() {
         runGreetBidiStream,
     } = useGreetService();
 
+    const defaultName = "FAWA";
+
     return (
-        <>
-            <h1>fawa Greet Service</h1>
-            <div className="card">
-                <label>
-                    Name:
-                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} />
-                </label>
+        <div className="greet-page-container">
+            <div className="greet-main-content">
+                <div className="fawa-logo">FAWA</div>
+                <div className="button-container">
+                    <button onClick={() => runSayHello(defaultName)}>SayHello (Unary)</button>
+                    <button onClick={() => runGreetStream(defaultName)}>GreetStream (Server Stream)</button>
+                    <button onClick={runGreetClientStream}>GreetClientStream (Client Stream)</button>
+                    <button onClick={runGreetBidiStream}>GreetBidiStream (Bidi Stream)</button>
+                </div>
             </div>
-            <div className="card">
-                <button onClick={() => runSayHello(name)}>SayHello (Unary)</button>
-                <button onClick={() => runGreetStream(name)}>GreetStream (Server Stream)</button>
-                <button onClick={runGreetClientStream}>GreetClientStream (Client Stream)</button>
-                <button onClick={runGreetBidiStream}>GreetBidiStream (Bidi Stream)</button>
-            </div>
-            <div className="card">
-                <h3>Logs</h3>
-                <button onClick={clearLogs} style={{ float: 'right' }}>Clear</button>
+            <div className="logs-container">
+                <div className="logs-header">
+                    <h3>Logs</h3>
+                    <button onClick={clearLogs}>Clear</button>
+                </div>
                 <pre className="logs">
-          {logs.map((log, i) => (
-              <div key={i}>{log}</div>
-          ))}
-        </pre>
+                  {logs.map((log, i) => (
+                      <div key={i}>{log}</div>
+                  ))}
+                </pre>
             </div>
-        </>
+        </div>
     );
 }
