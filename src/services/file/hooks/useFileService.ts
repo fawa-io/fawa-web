@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { create } from "@bufbuild/protobuf";
 import { fileClient } from "../api";
-import { SendFileRequest } from "../../../gen/fawa/file/v1/file_pb.ts";
+import type { SendFileRequest } from "../../../gen/fawa/file/v1/file_pb.ts";
+import { SendFileRequestSchema } from "../../../gen/fawa/file/v1/file_pb.ts";
 
 export function useFileService() {
   const [logs, setLogs] = useState<string[]>([]);
@@ -29,7 +31,7 @@ export function useFileService() {
 
     async function* sendRequests() {
       addLog(`Sending file name: ${file.name}`);
-      yield new SendFileRequest({
+      yield create(SendFileRequestSchema, {
         payload: { case: "fileName", value: file.name },
       });
 
@@ -41,7 +43,7 @@ export function useFileService() {
         if (done) {
           break;
         }
-        yield new SendFileRequest({
+        yield create(SendFileRequestSchema, {
           payload: { case: "chunkData", value },
         });
         bytesSent += value.length;
