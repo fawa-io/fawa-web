@@ -1,4 +1,5 @@
 
+import { Link } from 'react-router-dom';
 import { useGreetService } from '../hooks/useGreetService';
 import './GreetConsole.css';
 
@@ -17,7 +18,7 @@ export function GreetConsole() {
     return (
         <div className="greet-page-container">
             <div className="greet-main-content">
-                <div className="fawa-logo">FAWA</div>
+                <Link to="/" className="fawa-logo">FAWA</Link>
                 <div className="button-container">
                     <button onClick={() => runSayHello(defaultName)}>SayHello (Unary)</button>
                     <button onClick={() => runGreetStream(defaultName)}>GreetStream (Server Stream)</button>

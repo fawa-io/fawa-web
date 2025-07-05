@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useFileService } from '../hooks/useFileService';
+import { Link } from 'react-router-dom';
 import './FileService.css';
 
 export function FileConsole() {
@@ -56,7 +57,7 @@ export function FileConsole() {
 
     return (
         <div className="page-container">
-            <div className="fawa-logo">FAWA</div>
+            <Link to="/" className="fawa-logo">FAWA</Link>
             <div className="file-console-container">
                 <h1>超快的rpc流式传输文件服务，颠覆性的改变！</h1>
 

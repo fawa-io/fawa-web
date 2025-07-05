@@ -30,7 +30,6 @@
     display: flex;
     justify-content: center;
     gap: 1rem;
-    flex-wrap: wrap;
 }
 
 /* 修正：通过提高选择器优先级来覆盖全局样式 */
@@ -45,6 +44,8 @@
     font-weight: bold;
     transition: all 0.2s ease-in-out;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    min-width: 220px;
+    text-align: center;
 }
 
 .button-container button:hover:not(:disabled) {
