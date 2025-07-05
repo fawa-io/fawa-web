@@ -20,10 +20,10 @@ export function GreetConsole() {
             <div className="greet-main-content">
                 <Link to="/" className="fawa-logo">FAWA</Link>
                 <div className="button-container">
-                    <button onClick={() => runSayHello(defaultName)}>SayHello (Unary)</button>
-                    <button onClick={() => runGreetStream(defaultName)}>GreetStream (Server Stream)</button>
-                    <button onClick={runGreetClientStream}>GreetClientStream (Client Stream)</button>
-                    <button onClick={runGreetBidiStream}>GreetBidiStream (Bidi Stream)</button>
+                    <button onClick={() => runSayHello(defaultName)}>Unary</button>
+                    <button onClick={() => runGreetStream(defaultName)}>ServerStream</button>
+                    <button onClick={runGreetClientStream}>ClientStream</button>
+                    <button onClick={runGreetBidiStream}>BidiStream</button>
                 </div>
             </div>
             <div className="logs-container">
