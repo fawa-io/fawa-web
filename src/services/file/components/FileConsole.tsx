@@ -5,7 +5,7 @@ import './FileService.css';
 
 export function FileConsole() {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [downloadFileName, setDownloadFileName] = useState('');
+    const [downloadRandomKey, setDownloadRandomKey] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const {
@@ -15,6 +15,7 @@ export function FileConsole() {
         downloadFile,
         uploadProgress,
         downloadProgress,
+        uploadedRandomKey,
     } = useFileService();
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,10 +33,21 @@ export function FileConsole() {
     };
 
     const handleDownload = () => {
-        if (downloadFileName) {
-            downloadFile(downloadFileName);
+        if (downloadRandomKey) {
+            downloadFile(downloadRandomKey);
         } else {
-            alert('Please enter a filename to download.');
+            alert('Please enter a random key to download.');
+        }
+    };
+
+    const handleCopyToClipboard = () => {
+        if (uploadedRandomKey) {
+            navigator.clipboard.writeText(uploadedRandomKey).then(() => {
+                alert('Random key copied to clipboard!');
+            }, (err) => {
+                alert('Failed to copy random key.');
+                console.error('Could not copy text: ', err);
+            });
         }
     };
 
@@ -76,6 +88,12 @@ export function FileConsole() {
                         />
                         {selectedFile && <p>Selected: {selectedFile.name}</p>}
                         <button onClick={handleUpload} disabled={!selectedFile}>Upload</button>
+                        {uploadedRandomKey && (
+                            <div className="random-key-container">
+                                <input type="text" value={uploadedRandomKey} readOnly />
+                                <button onClick={handleCopyToClipboard}>Copy</button>
+                            </div>
+                        )}
                         {uploadProgress > 0 && (
                             <div className="progress-bar-container">
                                 <div className="progress-bar" style={{ width: `${uploadProgress}%` }}>
@@ -89,11 +107,11 @@ export function FileConsole() {
                         <h2>Download File</h2>
                         <input
                             type="text"
-                            value={downloadFileName}
-                            onChange={(e) => setDownloadFileName(e.target.value)}
-                            placeholder="Enter filename to download"
+                            value={downloadRandomKey}
+                            onChange={(e) => setDownloadRandomKey(e.target.value)}
+                            placeholder="Enter random key to download"
                         />
-                        <button onClick={handleDownload} disabled={!downloadFileName}>Download</button>
+                        <button onClick={handleDownload} disabled={!downloadRandomKey}>Download</button>
                         {downloadProgress > 0 && (
                             <div className="progress-bar-container">
                                 <div className="progress-bar" style={{ width: `${downloadProgress}%` }}>

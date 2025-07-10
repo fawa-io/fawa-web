@@ -185,3 +185,25 @@ button:hover:not(:disabled) {
         transform: translateY(0);
     }
 }
+
+.random-key-container {
+    display: flex;
+    align-items: center;
+    margin-top: 1rem;
+    width: 90%;
+}
+
+.random-key-container input[type="text"] {
+    flex-grow: 1;
+    margin-right: 0.5rem;
+    margin-bottom: 0; /* Override default margin */
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    border-color: #007bff;
+}
+
+.random-key-container button {
+    padding: 0.5rem 1rem; /* Smaller padding for the copy button */
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}

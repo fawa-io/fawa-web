@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file fawa/file/v1/file.proto.
  */
 export const file_fawa_file_v1_file: GenFile = /*@__PURE__*/
-  fileDesc("ChdmYXdhL2ZpbGUvdjEvZmlsZS5wcm90bxIScHJvdG8uZmF3YS5maWxlLnYxIkcKD1NlbmRGaWxlUmVxdWVzdBITCglmaWxlX25hbWUYASABKAlIABIUCgpjaHVua19kYXRhGAIgASgMSABCCQoHcGF5bG9hZCI0ChBTZW5kRmlsZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCSInChJSZWNlaXZlRmlsZVJlcXVlc3QSEQoJZmlsZV9uYW1lGAEgASgJIksKE1JlY2VpdmVGaWxlUmVzcG9uc2USEwoJZmlsZV9zaXplGAEgASgDSAASFAoKY2h1bmtfZGF0YRgCIAEoDEgAQgkKB3BheWxvYWQyzAEKC0ZpbGVTZXJ2aWNlElkKCFNlbmRGaWxlEiMucHJvdG8uZmF3YS5maWxlLnYxLlNlbmRGaWxlUmVxdWVzdBokLnByb3RvLmZhd2EuZmlsZS52MS5TZW5kRmlsZVJlc3BvbnNlIgAoARJiCgtSZWNlaXZlRmlsZRImLnByb3RvLmZhd2EuZmlsZS52MS5SZWNlaXZlRmlsZVJlcXVlc3QaJy5wcm90by5mYXdhLmZpbGUudjEuUmVjZWl2ZUZpbGVSZXNwb25zZSIAMAFCMVovZ2l0aHViLmNvbS9mYXdhLWlvL2Zhd2EvZ2VuL2Zhd2EvZmlsZS92MTtmaWxldjFiBnByb3RvMw");
+  fileDesc("ChdmYXdhL2ZpbGUvdjEvZmlsZS5wcm90bxIScHJvdG8uZmF3YS5maWxlLnYxIkcKD1NlbmRGaWxlUmVxdWVzdBITCglmaWxlX25hbWUYASABKAlIABIUCgpjaHVua19kYXRhGAIgASgMSABCCQoHcGF5bG9hZCJHChBTZW5kRmlsZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCRIRCglyYW5kb21rZXkYAyABKAkiJwoSUmVjZWl2ZUZpbGVSZXF1ZXN0EhEKCXJhbmRvbWtleRgBIAEoCSJdChNSZWNlaXZlRmlsZVJlc3BvbnNlEhAKCGZpbGVuYW1lGAEgASgJEhMKCWZpbGVfc2l6ZRgCIAEoA0gAEhQKCmNodW5rX2RhdGEYAyABKAxIAEIJCgdwYXlsb2FkMswBCgtGaWxlU2VydmljZRJZCghTZW5kRmlsZRIjLnByb3RvLmZhd2EuZmlsZS52MS5TZW5kRmlsZVJlcXVlc3QaJC5wcm90by5mYXdhLmZpbGUudjEuU2VuZEZpbGVSZXNwb25zZSIAKAESYgoLUmVjZWl2ZUZpbGUSJi5wcm90by5mYXdhLmZpbGUudjEuUmVjZWl2ZUZpbGVSZXF1ZXN0GicucHJvdG8uZmF3YS5maWxlLnYxLlJlY2VpdmVGaWxlUmVzcG9uc2UiADABQjFaL2dpdGh1Yi5jb20vZmF3YS1pby9mYXdhL2dlbi9mYXdhL2ZpbGUvdjE7ZmlsZXYxYgZwcm90bzM");
 
 /**
  * @generated from message proto.fawa.file.v1.SendFileRequest
@@ -68,6 +68,11 @@ export type SendFileResponse = Message<"proto.fawa.file.v1.SendFileResponse"> & 
    * @generated from field: string message = 2;
    */
   message: string;
+
+  /**
+   * @generated from field: string randomkey = 3;
+   */
+  randomkey: string;
 };
 
 /**
@@ -82,9 +87,9 @@ export const SendFileResponseSchema: GenMessage<SendFileResponse> = /*@__PURE__*
  */
 export type ReceiveFileRequest = Message<"proto.fawa.file.v1.ReceiveFileRequest"> & {
   /**
-   * @generated from field: string file_name = 1;
+   * @generated from field: string randomkey = 1;
    */
-  fileName: string;
+  randomkey: string;
 };
 
 /**
@@ -99,17 +104,22 @@ export const ReceiveFileRequestSchema: GenMessage<ReceiveFileRequest> = /*@__PUR
  */
 export type ReceiveFileResponse = Message<"proto.fawa.file.v1.ReceiveFileResponse"> & {
   /**
+   * @generated from field: string filename = 1;
+   */
+  filename: string;
+
+  /**
    * @generated from oneof proto.fawa.file.v1.ReceiveFileResponse.payload
    */
   payload: {
     /**
-     * @generated from field: int64 file_size = 1;
+     * @generated from field: int64 file_size = 2;
      */
     value: bigint;
     case: "fileSize";
   } | {
     /**
-     * @generated from field: bytes chunk_data = 2;
+     * @generated from field: bytes chunk_data = 3;
      */
     value: Uint8Array;
     case: "chunkData";
