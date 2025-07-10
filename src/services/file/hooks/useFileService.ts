@@ -77,20 +77,13 @@ export function useFileService() {
 
       let fileName = "";
       let fileSize = 0;
-      let firstChunk: Uint8Array | undefined;
+      const bufferedChunks: Uint8Array[] = []; // Buffer for chunks received before metadata
 
-      // --- Metadata Reading Loop ---
-      // We need to read from the stream until we have the filename and size.
-      while (!fileName || !fileSize) {
-        const response = await reader.next();
-        if (response.done) {
-          // If the stream ends before we get metadata, something is wrong.
-          if (!fileName) throw new Error("Stream ended before filename was received.");
-          if (!fileSize && !firstChunk) throw new Error("Stream ended before file size or any data was received.");
-          break; // Exit if stream is done (e.g., for zero-byte files).
-        }
+      let fileStream: WritableStream | undefined;
+      let writer: WritableStreamDefaultWriter | undefined;
+      let receivedBytes = 0;
 
-        const message = response.value;
+      for await (const message of { [Symbol.asyncIterator]: () => reader }) {
         if (message.filename && !fileName) {
           fileName = message.filename;
           addLog(`Receiving file: ${fileName}`);
@@ -99,56 +92,72 @@ export function useFileService() {
         if (message.payload.case === "fileSize") {
           fileSize = Number(message.payload.value);
           addLog(`File size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
-        } else if (message.payload.case === "chunkData") {
-          // This is the first chunk of data. Store it for later.
-          if (!firstChunk) {
-            firstChunk = message.payload.value;
-            // If we don't have a file size yet, we can use the chunk length as a temporary value
-            if (!fileSize) {
-              addLog("File size not yet received, using first chunk size for initial progress.");
+        }
+
+        if (message.payload.case === "chunkData") {
+          if (!fileName) {
+            // If filename is not yet known, buffer the chunk
+            bufferedChunks.push(message.payload.value);
+            addLog(`Buffered chunk (filename not yet received). Buffer size: ${bufferedChunks.length}`);
+          } else {
+            // If filename is known, and writer is not yet initialized, initialize it
+            if (!fileStream) {
+              // If fileSize is still 0, it means it wasn't sent or is a zero-byte file.
+              // We can use the sum of buffered chunks + current chunk for initial size estimation.
+              const initialSize = bufferedChunks.reduce((acc, chunk) => acc + chunk.length, 0) + message.payload.value.length;
+              if (fileSize === 0) {
+                addLog(`Warning: Total file size not provided by server. Estimating size based on initial chunks.`);
+                fileSize = initialSize; // Use estimated size for progress calculation
+              }
+              fileStream = streamSaver.createWriteStream(fileName, { size: fileSize });
+              writer = fileStream.getWriter();
+
+              // Write all buffered chunks first
+              for (const chunk of bufferedChunks) {
+                await writer.write(chunk);
+                receivedBytes += chunk.length;
+                const progress = fileSize > 0 ? Math.round((receivedBytes / fileSize) * 100) : 0;
+                setDownloadProgress(progress);
+                addLog(`Wrote buffered chunk, progress: ${progress}%`);
+              }
+              bufferedChunks.length = 0; // Clear the buffer
+            }
+
+            // Write the current chunk
+            if (writer) {
+              await writer.write(message.payload.value);
+              receivedBytes += message.payload.value.length;
+              const progress = fileSize > 0 ? Math.round((receivedBytes / fileSize) * 100) : 0;
+              setDownloadProgress(progress);
+              addLog(`Received chunk, progress: ${progress}%`);
             }
           }
         }
-        // If we have everything we need, break the loop
-        if (fileName && (fileSize || firstChunk)) break;
       }
 
+      // After the loop, ensure filename was received and writer was closed
       if (!fileName) {
         throw new Error("Filename was not received from the server.");
       }
-      if (!fileSize && firstChunk) {
-        fileSize = firstChunk.length;
-        addLog(`Warning: Total file size not provided by server. Assuming size of first chunk for single-chunk file.`);
-      }
-
-      // --- File Writing ---
-      const fileStream = streamSaver.createWriteStream(fileName, { size: fileSize });
-      const writer = fileStream.getWriter();
-      let receivedBytes = 0;
-
-      // Write the first chunk if we have it
-      if (firstChunk) {
-        await writer.write(firstChunk);
-        receivedBytes += firstChunk.length;
-        const progress = fileSize > 0 ? Math.round((receivedBytes / fileSize) * 100) : 0;
-        setDownloadProgress(progress);
-        addLog(`Wrote first chunk, progress: ${progress}%`);
-      }
-
-      // Process the rest of the stream
-      for await (const response of { [Symbol.asyncIterator]: () => reader }) {
-        if (response.payload.case === "chunkData") {
-          await writer.write(response.payload.value);
-          receivedBytes += response.payload.value.length;
-          const progress =
-            fileSize > 0 ? Math.round((receivedBytes / fileSize) * 100) : 0;
-          setDownloadProgress(progress);
-          addLog(`Received chunk, progress: ${progress}%`);
+      if (writer) {
+        await writer.close();
+        addLog(`File ${fileName} saved successfully.`);
+      } else {
+        // This case might happen for zero-byte files where no chunkData is sent
+        // or if only metadata was sent but no actual file data.
+        // If bufferedChunks is not empty, it means we received chunks but no filename.
+        if (bufferedChunks.length > 0) {
+          throw new Error("Received data chunks but no filename to write them to.");
+        }
+        // If no chunks and no writer, it implies a zero-byte file or an empty stream.
+        // We should still create and close the file to ensure it exists.
+        if (fileName) {
+          fileStream = streamSaver.createWriteStream(fileName, { size: 0 });
+          writer = fileStream.getWriter();
+          await writer.close();
+          addLog(`Zero-byte file ${fileName} created successfully.`);
         }
       }
-
-      await writer.close();
-      addLog(`File ${fileName} saved successfully.`);
 
     } catch (e) {
       const message = e instanceof Error ? e.message : "Unknown error";
