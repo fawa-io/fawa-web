@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useFileService } from '../hooks/useFileService';
 import { Link } from 'react-router-dom';
+import QRCode from 'qrcode.react'; // Added import
 import './FileService.css';
 
 export function FileConsole() {
@@ -68,9 +69,9 @@ export function FileConsole() {
     };
 
     return (
-        <div className="page-container">
-            <Link to="/" className="fawa-logo">FAWA</Link>
-            <div className="file-console-container">
+        <div className="file-page-container">
+            <Link to="/" className="file-fawa-logo">FAWA</Link>
+            <div className="file-service-console-container">
                 <h1>超快的rpc流式传输文件服务，颠覆性的改变！</h1>
 
                 <div className="card-row">
@@ -84,14 +85,24 @@ export function FileConsole() {
                             type="file"
                             onChange={handleFileChange}
                             ref={fileInputRef}
-                            className="file-input"
+                            className="file-input-hidden"
+                            id="file-upload"
                         />
-                        {selectedFile && <p>Selected: {selectedFile.name}</p>}
+                        <label htmlFor="file-upload" className="custom-file-upload">
+                            Choose File
+                        </label>
+                        {selectedFile ? (
+                            <p>Selected file: {selectedFile.name}</p>
+                        ) : (
+                            <p>No file chosen</p>
+                        )}
                         <button onClick={handleUpload} disabled={!selectedFile}>Upload</button>
                         {uploadedRandomKey && (
-                            <div className="random-key-container">
-                                <input type="text" value={uploadedRandomKey} readOnly />
-                                <button onClick={handleCopyToClipboard}>Copy</button>
+                            <div className="qr-code-container">
+                                <p className="scan-to-download-text">Scan to download</p>
+                                <QRCode value={`${window.location.origin}/download?key=${uploadedRandomKey}`} size={128} level="H" />
+                                <p className="random-key-display">Random Key: <span className="highlight-random-key">{uploadedRandomKey}</span></p>
+                                <button onClick={handleCopyToClipboard}>Copy Random Key</button>
                             </div>
                         )}
                         {uploadProgress > 0 && (
