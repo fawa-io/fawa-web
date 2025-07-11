@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './components/Home';
 import { GreetConsole } from './services/greet/components/GreetConsole';
 import { FileConsole } from './services/file/components/FileConsole';
+import DownloadHandler from './components/DownloadHandler'; // 导入 DownloadHandler
 import './App.css';
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/greet" element={<GreetConsole />} />
           <Route path="/file" element={<FileConsole />} />
+          <Route path="/download" element={<DownloadHandler />} /> {/* 添加新的路由 */}
         </Routes>
       </div>
     </Router>
