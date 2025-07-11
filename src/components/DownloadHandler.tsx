@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useFileService } from '../services/file/hooks/useFileService';
 
@@ -6,15 +6,17 @@ const DownloadHandler: React.FC = () => {
   const location = useLocation();
   const { downloadFile, logs, downloadProgress } = useFileService();
   const [message, setMessage] = useState('正在准备下载...');
+  const hasDownloaded = useRef(false); // 使用 useRef 跟踪是否已触发下载
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const key = queryParams.get('key');
 
-    if (key) {
+    if (key && !hasDownloaded.current) {
       setMessage(`正在下载文件，密钥为: ${key}`);
       downloadFile(key);
-    } else {
+      hasDownloaded.current = true; // 标记已触发下载
+    } else if (!key) {
       setMessage('未找到下载密钥。');
     }
   }, [location.search, downloadFile]);
