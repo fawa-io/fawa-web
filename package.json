@@ -16,7 +16,8 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-router-dom": "^7.6.3",
-    "streamsaver": "^2.0.6"
+    "streamsaver": "^2.0.6",
+    "qrcode.react": "^3.1.0"
   },
   "devDependencies": {
     "@bufbuild/buf": "^1.55.1",
