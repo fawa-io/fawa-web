@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { create } from "@bufbuild/protobuf";
-import streamSaver from "streamsaver";
+
 import { fileClient } from "../api";
 import { SendFileRequestSchema, FileInfoSchema } from "../../../gen/fawa/file/v1/file_pb.ts";
 
