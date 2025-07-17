@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file fawa/file/v1/file.proto.
  */
 export const file_fawa_file_v1_file: GenFile = /*@__PURE__*/
-  fileDesc("ChdmYXdhL2ZpbGUvdjEvZmlsZS5wcm90bxIScHJvdG8uZmF3YS5maWxlLnYxIkcKD1NlbmRGaWxlUmVxdWVzdBITCglmaWxlX25hbWUYASABKAlIABIUCgpjaHVua19kYXRhGAIgASgMSABCCQoHcGF5bG9hZCJHChBTZW5kRmlsZVJlc3BvbnNlEg8KB3N1Y2Nlc3MYASABKAgSDwoHbWVzc2FnZRgCIAEoCRIRCglyYW5kb21rZXkYAyABKAkiJwoSUmVjZWl2ZUZpbGVSZXF1ZXN0EhEKCXJhbmRvbWtleRgBIAEoCSJdChNSZWNlaXZlRmlsZVJlc3BvbnNlEhAKCGZpbGVuYW1lGAEgASgJEhMKCWZpbGVfc2l6ZRgCIAEoA0gAEhQKCmNodW5rX2RhdGEYAyABKAxIAEIJCgdwYXlsb2FkMswBCgtGaWxlU2VydmljZRJZCghTZW5kRmlsZRIjLnByb3RvLmZhd2EuZmlsZS52MS5TZW5kRmlsZVJlcXVlc3QaJC5wcm90by5mYXdhLmZpbGUudjEuU2VuZEZpbGVSZXNwb25zZSIAKAESYgoLUmVjZWl2ZUZpbGUSJi5wcm90by5mYXdhLmZpbGUudjEuUmVjZWl2ZUZpbGVSZXF1ZXN0GicucHJvdG8uZmF3YS5maWxlLnYxLlJlY2VpdmVGaWxlUmVzcG9uc2UiADABQjFaL2dpdGh1Yi5jb20vZmF3YS1pby9mYXdhL2dlbi9mYXdhL2ZpbGUvdjE7ZmlsZXYxYgZwcm90bzM");
+  fileDesc("ChdmYXdhL2ZpbGUvdjEvZmlsZS5wcm90bxIScHJvdG8uZmF3YS5maWxlLnYxImAKD1NlbmRGaWxlUmVxdWVzdBIsCgRpbmZvGAEgASgLMhwucHJvdG8uZmF3YS5maWxlLnYxLkZpbGVJbmZvSAASFAoKY2h1bmtfZGF0YRgCIAEoDEgAQgkKB3BheWxvYWQiRwoQU2VuZEZpbGVSZXNwb25zZRIPCgdzdWNjZXNzGAEgASgIEg8KB21lc3NhZ2UYAiABKAkSEQoJcmFuZG9ta2V5GAMgASgJIicKElJlY2VpdmVGaWxlUmVxdWVzdBIRCglyYW5kb21rZXkYASABKAkiXQoTUmVjZWl2ZUZpbGVSZXNwb25zZRIQCghmaWxlbmFtZRgBIAEoCRITCglmaWxlX3NpemUYAiABKANIABIUCgpjaHVua19kYXRhGAMgASgMSABCCQoHcGF5bG9hZCIqChVHZXREb3dubG9hZFVSTFJlcXVlc3QSEQoJcmFuZG9ta2V5GAEgASgJIjcKFkdldERvd25sb2FkVVJMUmVzcG9uc2USCwoDdXJsGAEgASgJEhAKCGZpbGVuYW1lGAIgASgJIiYKCEZpbGVJbmZvEgwKBG5hbWUYASABKAkSDAoEc2l6ZRgCIAEoAzK3AgoLRmlsZVNlcnZpY2USWQoIU2VuZEZpbGUSIy5wcm90by5mYXdhLmZpbGUudjEuU2VuZEZpbGVSZXF1ZXN0GiQucHJvdG8uZmF3YS5maWxlLnYxLlNlbmRGaWxlUmVzcG9uc2UiACgBEmIKC1JlY2VpdmVGaWxlEiYucHJvdG8uZmF3YS5maWxlLnYxLlJlY2VpdmVGaWxlUmVxdWVzdBonLnByb3RvLmZhd2EuZmlsZS52MS5SZWNlaXZlRmlsZVJlc3BvbnNlIgAwARJpCg5HZXREb3dubG9hZFVSTBIpLnByb3RvLmZhd2EuZmlsZS52MS5HZXREb3dubG9hZFVSTFJlcXVlc3QaKi5wcm90by5mYXdhLmZpbGUudjEuR2V0RG93bmxvYWRVUkxSZXNwb25zZSIAQjFaL2dpdGh1Yi5jb20vZmF3YS1pby9mYXdhL2dlbi9mYXdhL2ZpbGUvdjE7ZmlsZXYxYgZwcm90bzM");
 
 /**
  * @generated from message proto.fawa.file.v1.SendFileRequest
@@ -35,10 +35,10 @@ export type SendFileRequest = Message<"proto.fawa.file.v1.SendFileRequest"> & {
    */
   payload: {
     /**
-     * @generated from field: string file_name = 1;
+     * @generated from field: proto.fawa.file.v1.FileInfo info = 1;
      */
-    value: string;
-    case: "fileName";
+    value: FileInfo;
+    case: "info";
   } | {
     /**
      * @generated from field: bytes chunk_data = 2;
@@ -134,6 +134,67 @@ export const ReceiveFileResponseSchema: GenMessage<ReceiveFileResponse> = /*@__P
   messageDesc(file_fawa_file_v1_file, 3);
 
 /**
+ * @generated from message proto.fawa.file.v1.GetDownloadURLRequest
+ */
+export type GetDownloadURLRequest = Message<"proto.fawa.file.v1.GetDownloadURLRequest"> & {
+  /**
+   * @generated from field: string randomkey = 1;
+   */
+  randomkey: string;
+};
+
+/**
+ * Describes the message proto.fawa.file.v1.GetDownloadURLRequest.
+ * Use `create(GetDownloadURLRequestSchema)` to create a new message.
+ */
+export const GetDownloadURLRequestSchema: GenMessage<GetDownloadURLRequest> = /*@__PURE__*/
+  messageDesc(file_fawa_file_v1_file, 4);
+
+/**
+ * @generated from message proto.fawa.file.v1.GetDownloadURLResponse
+ */
+export type GetDownloadURLResponse = Message<"proto.fawa.file.v1.GetDownloadURLResponse"> & {
+  /**
+   * @generated from field: string url = 1;
+   */
+  url: string;
+
+  /**
+   * @generated from field: string filename = 2;
+   */
+  filename: string;
+};
+
+/**
+ * Describes the message proto.fawa.file.v1.GetDownloadURLResponse.
+ * Use `create(GetDownloadURLResponseSchema)` to create a new message.
+ */
+export const GetDownloadURLResponseSchema: GenMessage<GetDownloadURLResponse> = /*@__PURE__*/
+  messageDesc(file_fawa_file_v1_file, 5);
+
+/**
+ * @generated from message proto.fawa.file.v1.FileInfo
+ */
+export type FileInfo = Message<"proto.fawa.file.v1.FileInfo"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: int64 size = 2;
+   */
+  size: bigint;
+};
+
+/**
+ * Describes the message proto.fawa.file.v1.FileInfo.
+ * Use `create(FileInfoSchema)` to create a new message.
+ */
+export const FileInfoSchema: GenMessage<FileInfo> = /*@__PURE__*/
+  messageDesc(file_fawa_file_v1_file, 6);
+
+/**
  * @generated from service proto.fawa.file.v1.FileService
  */
 export const FileService: GenService<{
@@ -152,6 +213,14 @@ export const FileService: GenService<{
     methodKind: "server_streaming";
     input: typeof ReceiveFileRequestSchema;
     output: typeof ReceiveFileResponseSchema;
+  },
+  /**
+   * @generated from rpc proto.fawa.file.v1.FileService.GetDownloadURL
+   */
+  getDownloadURL: {
+    methodKind: "unary";
+    input: typeof GetDownloadURLRequestSchema;
+    output: typeof GetDownloadURLResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_fawa_file_v1_file, 0);
