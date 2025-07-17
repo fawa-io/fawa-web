@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { create } from "@bufbuild/protobuf";
-import streamSaver from "streamsaver";
+
 import { fileClient } from "../api";
-import { SendFileRequestSchema } from "../../../gen/fawa/file/v1/file_pb.ts";
+import { SendFileRequestSchema, FileInfoSchema } from "../../../gen/fawa/file/v1/file_pb.ts";
 
 export function useFileService() {
   const [logs, setLogs] = useState<string[]>([]);
@@ -32,9 +32,9 @@ export function useFileService() {
     );
 
     async function* sendRequests() {
-      addLog(`Sending file name: ${file.name}`);
+      addLog(`Sending file info: ${file.name} (${file.size} bytes)`);
       yield create(SendFileRequestSchema, {
-        payload: { case: "fileName", value: file.name },
+        payload: { case: "info", value: create(FileInfoSchema, { name: file.name, size: BigInt(file.size) }) },
       });
 
       let bytesSent = 0;
@@ -68,97 +68,28 @@ export function useFileService() {
 
   const downloadFile = async (randomKey: string) => {
     clearLogs();
-    addLog("--- Server-Streaming RPC (Download) ---");
-    addLog(`Requesting file with random key: ${randomKey}`);
+    addLog("--- Requesting Download URL ---");
+    addLog(`Requesting download URL for key: ${randomKey}`);
 
     try {
-      const stream = fileClient.receiveFile({ randomkey: randomKey });
-      const reader = stream[Symbol.asyncIterator]();
+      const response = await fileClient.getDownloadURL({ randomkey: randomKey });
+      if (response.url) {
+        addLog(`Download URL received: ${response.url}`);
+        addLog(`Initiating download for file: ${response.filename}`);
 
-      let fileName = "";
-      let fileSize = 0;
-      const bufferedChunks: Uint8Array[] = []; // Buffer for chunks received before metadata
+        // Create a temporary link and click it to initiate download
+        const a = document.createElement('a');
+        a.href = response.url;
+        a.download = response.filename || 'download'; // Suggest filename
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
 
-      let fileStream: WritableStream | undefined;
-      let writer: WritableStreamDefaultWriter | undefined;
-      let receivedBytes = 0;
-
-      for await (const message of { [Symbol.asyncIterator]: () => reader }) {
-        if (message.filename && !fileName) {
-          fileName = message.filename;
-          addLog(`Receiving file: ${fileName}`);
-        }
-
-        if (message.payload.case === "fileSize") {
-          fileSize = Number(message.payload.value);
-          addLog(`File size: ${(fileSize / 1024 / 1024).toFixed(2)} MB`);
-        }
-
-        if (message.payload.case === "chunkData") {
-          if (!fileName) {
-            // If filename is not yet known, buffer the chunk
-            bufferedChunks.push(message.payload.value);
-            addLog(`Buffered chunk (filename not yet received). Buffer size: ${bufferedChunks.length}`);
-          } else {
-            // If filename is known, and writer is not yet initialized, initialize it
-            if (!fileStream) {
-              // If fileSize is still 0, it means it wasn't sent or is a zero-byte file.
-              // We can use the sum of buffered chunks + current chunk for initial size estimation.
-              const initialSize = bufferedChunks.reduce((acc, chunk) => acc + chunk.length, 0) + message.payload.value.length;
-              if (fileSize === 0) {
-                addLog(`Warning: Total file size not provided by server. Estimating size based on initial chunks.`);
-                fileSize = initialSize; // Use estimated size for progress calculation
-              }
-              fileStream = streamSaver.createWriteStream(fileName, { size: fileSize });
-              writer = fileStream.getWriter();
-
-              // Write all buffered chunks first
-              for (const chunk of bufferedChunks) {
-                await writer.write(chunk);
-                receivedBytes += chunk.length;
-                const progress = fileSize > 0 ? Math.round((receivedBytes / fileSize) * 100) : 0;
-                setDownloadProgress(progress);
-                addLog(`Wrote buffered chunk, progress: ${progress}%`);
-              }
-              bufferedChunks.length = 0; // Clear the buffer
-            }
-
-            // Write the current chunk
-            if (writer) {
-              await writer.write(message.payload.value);
-              receivedBytes += message.payload.value.length;
-              const progress = fileSize > 0 ? Math.round((receivedBytes / fileSize) * 100) : 0;
-              setDownloadProgress(progress);
-              addLog(`Received chunk, progress: ${progress}%`);
-            }
-          }
-        }
-      }
-
-      // After the loop, ensure filename was received and writer was closed
-      if (!fileName) {
-        throw new Error("Filename was not received from the server.");
-      }
-      if (writer) {
-        await writer.close();
-        addLog(`File ${fileName} saved successfully.`);
+        addLog(`Download of "${response.filename}" initiated.`);
+        setDownloadProgress(100); // Assuming direct download means instant "completion" from frontend perspective
       } else {
-        // This case might happen for zero-byte files where no chunkData is sent
-        // or if only metadata was sent but no actual file data.
-        // If bufferedChunks is not empty, it means we received chunks but no filename.
-        if (bufferedChunks.length > 0) {
-          throw new Error("Received data chunks but no filename to write them to.");
-        }
-        // If no chunks and no writer, it implies a zero-byte file or an empty stream.
-        // We should still create and close the file to ensure it exists.
-        if (fileName) {
-          fileStream = streamSaver.createWriteStream(fileName, { size: 0 });
-          writer = fileStream.getWriter();
-          await writer.close();
-          addLog(`Zero-byte file ${fileName} created successfully.`);
-        }
+        addLog('Error: Could not get download URL.');
       }
-
     } catch (e) {
       const message = e instanceof Error ? e.message : "Unknown error";
       addLog(`Download failed: ${message}`);
