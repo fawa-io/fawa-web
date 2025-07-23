@@ -1,108 +1,257 @@
-.canva-page-container {
+.canvas-page-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  padding: 1rem;
-  background-color: #f5f5f5;
+  height: 100vh;
+  padding: 2rem;
+  box-sizing: border-box;
 }
 
-.canva-logo {
-  font-size: 24px;
+.canvas-main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  text-align: center;
+}
+
+.fawa-logo {
+  font-size: 4rem;
   font-weight: bold;
+  font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+  background: linear-gradient(45deg, #fff, #b3e5fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  margin-bottom: 1rem;
   text-decoration: none;
-  color: #000;
-  margin-bottom: 20px;
-  align-self: flex-start;
 }
 
 .canvas-controls {
+  width: 100%;
+  max-width: 800px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 10px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.connection-controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.connection-controls button {
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  outline: none;
+}
+
+.connection-controls button:first-child {
+  background-color: #4caf50;
+  color: white;
+}
+
+.connection-controls button:first-child:disabled {
+  background-color: #81c784;
+  cursor: not-allowed;
+}
+
+.connection-controls button:last-child {
+  background-color: #f44336;
+  color: white;
+}
+
+.connection-controls button:last-child:disabled {
+  background-color: #e57373;
+  cursor: not-allowed;
+}
+
+.connection-controls button.connected {
+  background-color: #81c784;
+}
+
+.drawing-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.control-group label {
+  color: white;
+  font-weight: bold;
+}
+
+.control-group input[type="color"] {
+  -webkit-appearance: none;
+  border: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.control-group input[type="range"] {
+  width: 100px;
+}
+
+.control-group span {
+  color: white;
+  font-size: 0.875rem;
+  width: 2.5rem;
+  text-align: left;
+}
+
+.clear-btn {
+  background-color: #ff9800;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.clear-btn:disabled {
+  background-color: #ffb74d;
+  cursor: not-allowed;
 }
 
 .canvas-container {
-  width: 100%;
-  height: 500px;
-  border: 2px solid #000;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  overflow: hidden;
-  background-color: #fff;
   position: relative;
+  width: 100%;
+  max-width: 800px;
+  height: 500px;
+  background: #ffffff;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 1rem;
 }
 
-canvas {
+.drawing-canvas {
   width: 100%;
   height: 100%;
   cursor: crosshair;
+  touch-action: none;
+}
+
+.canvas-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10;
+}
+
+.canvas-overlay p {
+  color: white;
+  font-size: 1.5rem;
+  text-align: center;
+  margin: 0;
 }
 
 .logs-container {
-  background-color: #000;
-  border-radius: 4px;
-  padding: 10px;
-  margin-bottom: 20px;
-  height: 200px;
-  overflow-y: auto;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  margin-top: 1rem;
 }
 
 .logs-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  width: 100%;
+  margin-bottom: 1rem;
 }
 
 .logs-header h3 {
   margin: 0;
   color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.logs-header button {
+  background-color: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 0.25rem;
+  cursor: pointer;
+}
+
+.logs-header button:hover {
+  background-color: #c82333;
 }
 
 .logs {
-  color: #00ff00;
-  font-family: monospace;
-  height: 150px;
+  background-color: #2b2b2b;
+  color: #ffffff;
+  padding: 1em;
+  border-radius: 8px;
+  text-align: left;
+  height: 200px;
+  width: 100%;
   overflow-y: auto;
+  font-family: 'Courier New', Courier, monospace;
+  box-sizing: border-box;
 }
 
-button {
-  background-color: #4285f4;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  padding: 8px 16px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.3s;
+.logs > div {
+  animation: fadeIn 0.5s ease-in-out;
 }
 
-button:hover {
-  background-color: #3367d6;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .canvas-controls {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .drawing-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .canvas-container {
+    height: 350px;
+  }
+  
+  .logs {
+    height: 150px;
+  }
 }
-
-.color-picker {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-}
-
-.color-picker input {
-  margin-right: 10px;
-}
-
-.size-picker {
-  display: flex;
-  gap: 5px;
-  align-items: center;
-}
-
-.size-picker label {
-  margin-right: 5px;
-} 
