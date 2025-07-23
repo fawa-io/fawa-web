@@ -15,6 +15,8 @@ export function CanvasConsole() {
     setDrawSettings,
     sendDrawEvent,
     createDrawEvent,
+    drawHistory,
+    renderHistory,
   } = useCanvaService();
 
   const [isDrawing, setIsDrawing] = useState(false);
@@ -32,7 +34,7 @@ export function CanvasConsole() {
       
       console.log(`Canvas尺寸设置为: ${canvasRef.current.width}x${canvasRef.current.height}`);
     }
-  }, []);
+  }, [canvasRef]);
 
   // 处理窗口大小变化
   useEffect(() => {
@@ -41,27 +43,19 @@ export function CanvasConsole() {
         const container = containerRef.current;
         const currentCanvas = canvasRef.current;
         
-        // 保存当前绘图内容
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = currentCanvas.width;
-        tempCanvas.height = currentCanvas.height;
-        const tempCtx = tempCanvas.getContext('2d');
-        tempCtx?.drawImage(currentCanvas, 0, 0);
-        
         // 调整大小
         currentCanvas.width = container.clientWidth;
         currentCanvas.height = container.clientHeight;
         console.log(`Canvas大小调整为: ${currentCanvas.width}x${currentCanvas.height}`);
         
-        // 恢复绘图内容
-        const ctx = currentCanvas.getContext('2d');
-        ctx?.drawImage(tempCanvas, 0, 0);
+        // 根据历史记录重新绘制画布
+        renderHistory(drawHistory);
       }
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [canvasRef, drawHistory, renderHistory]);
 
   // 获取鼠标/触摸在画布上的坐标
   const getCanvasCoordinates = (e: React.MouseEvent | React.TouchEvent) => {

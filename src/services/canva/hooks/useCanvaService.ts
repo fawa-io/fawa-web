@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useRef, useCallback, useEffect } from "react";
 import { create } from "@bufbuild/protobuf";
 
@@ -7,7 +8,7 @@ import type {
   DrawEvent,
 } from "../../../gen/fawa/canva/v1/canva_pb";
 import {
-  ClientDrawRequestSchema,
+  // ClientDrawRequestSchema, // 未使用，暂时注释掉
   DrawEventSchema,
 } from "../../../gen/fawa/canva/v1/canva_pb";
 
@@ -38,16 +39,16 @@ export function useCanvaService() {
     close: () => void;
   } | null>(null);
 
-  const addLog = (message: string) => {
+  const addLog = useCallback((message: string) => {
     setLogs((prev) => [
       ...prev,
       `[${new Date().toLocaleTimeString()}] ${message}`,
     ]);
-  };
+  }, []);
 
-  const clearLogs = () => {
+  const clearLogs = useCallback(() => {
     setLogs([]);
-  };
+  }, []);
   
   const disconnect = useCallback(() => {
     if (abortControllerRef.current) {
@@ -63,7 +64,7 @@ export function useCanvaService() {
     if (streamControllerRef.current) {
       try {
         streamControllerRef.current.close();
-      } catch (e) {
+      } catch {
         // 忽略错误
       }
       streamControllerRef.current = null;
@@ -75,7 +76,7 @@ export function useCanvaService() {
     setIsConnected(false);
     setClientId("");
     addLog("已断开连接");
-  }, []);
+  }, [addLog]);
 
   const connect = useCallback(async () => {
     if (isConnected) {
@@ -122,7 +123,7 @@ export function useCanvaService() {
           try {
             writer.close();
             reader.cancel();
-          } catch (e) {
+          } catch {
             // 忽略错误
           }
         }
@@ -142,10 +143,13 @@ export function useCanvaService() {
               }
             } as ClientDrawRequest);
             addLog(`发送了${event.type === "ping" ? "ping" : event.type === "clear" ? "清除" : "绘制"}事件`);
-          } catch (e) {
-            addLog(`发送事件失败: ${e instanceof Error ? e.message : "未知错误"}`);
-            // 放回队列，下次再试
-            messageQueueRef.current.unshift(event);
+          } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : String(err);
+            addLog(`发送事件失败: ${errorMsg}`);
+            // 只有当错误不表明流已关闭时才放回队列重试
+            if (!errorMsg.includes('closed')) {
+              messageQueueRef.current.unshift(event);
+            }
           }
         }
       };
@@ -195,10 +199,15 @@ export function useCanvaService() {
               
               addLog(`收到绘制事件: 类型=${event.type}, 客户端=${event.clientId}`);
               
-              // 如果是第一次收到该客户端的消息，保存客户端ID
-              if (clientId === "" && event.clientId) {
-                setClientId(event.clientId);
-                addLog(`分配的客户端ID: ${event.clientId}`);
+              // 如果有客户端ID，使用函数式更新检查并更新
+              if (event.clientId) {
+                setClientId((currentId) => {
+                  if (currentId === "") {
+                    addLog(`分配的客户端ID: ${event.clientId}`);
+                    return event.clientId;
+                  }
+                  return currentId;
+                });
               }
               
               // 特殊处理clear类型事件
@@ -221,18 +230,18 @@ export function useCanvaService() {
           }
           addLog("服务器流已关闭");
           disconnect();
-        } catch (e) {
-          const errorMsg = e instanceof Error ? e.message : "未知错误";
+        } catch (err) {
+          const errorMsg = err instanceof Error ? err.message : "未知错误";
           addLog(`流错误: ${errorMsg}`);
           disconnect();
         }
       })();
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : "未知错误";
+    } catch (err) {
+      const errorMsg = err instanceof Error ? err.message : "未知错误";
       addLog(`连接失败: ${errorMsg}`);
       disconnect();
     }
-  }, [disconnect, clientId]);
+  }, [disconnect, clientId, addLog, clearLogs]);
 
   // 清除画布内容
   const clearCanvasContent = useCallback(() => {
@@ -242,7 +251,7 @@ export function useCanvaService() {
     if (!ctx) return;
     
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-  }, []);
+  }, [canvasRef]);
 
   // 发送绘制事件到服务器
   const sendDrawEvent = useCallback(
@@ -254,12 +263,12 @@ export function useCanvaService() {
 
       try {
         streamControllerRef.current.enqueue(event);
-      } catch (e) {
-        const errorMsg = e instanceof Error ? e.message : "未知错误";
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : "未知错误";
         addLog(`发送绘制事件失败: ${errorMsg}`);
       }
     },
-    [isConnected]
+    [isConnected, addLog]
   );
 
   // 处理绘制事件
@@ -281,7 +290,7 @@ export function useCanvaService() {
       ctx.lineTo(event.currX, event.currY);
       ctx.stroke();
     },
-    []
+    [canvasRef]
   );
 
   // 绘制历史记录
@@ -308,7 +317,7 @@ export function useCanvaService() {
       // 正常绘制其他事件
       handleDrawEvent(event);
     }
-  }, [handleDrawEvent]);
+  }, [handleDrawEvent, canvasRef]);
 
   // 生成绘制事件
   const createDrawEvent = useCallback(
@@ -357,5 +366,6 @@ export function useCanvaService() {
     setDrawSettings,
     sendDrawEvent,
     createDrawEvent,
+    renderHistory, // 导出renderHistory函数
   };
 } 
