@@ -15,6 +15,9 @@ function Home() {
           <li>
             <Link to="/file" className="service-link">File 服务</Link>
           </li>
+          <li>
+            <Link to="/canvas" className="service-link">协同画布服务</Link>
+          </li>
         </ul>
       </nav>
     </div>
