@@ -16,7 +16,10 @@ function Home() {
             <Link to="/file" className="service-link">File 服务</Link>
           </li>
           <li>
-            <Link to="/canvas" className="service-link">协同画布服务</Link>
+            <Link to="/canvas" className="service-link">协同画布服务(connect版，因fetch不支持暂不服务)</Link>
+          </li>
+          <li>
+            <Link to="/canvas-wt" className="service-link">协同画布服务(WebTransport版)</Link>
           </li>
         </ul>
       </nav>
