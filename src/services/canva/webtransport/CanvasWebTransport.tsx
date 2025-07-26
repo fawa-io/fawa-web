@@ -28,24 +28,39 @@ export const CanvasWebTransport: React.FC<{ serverUrl: string }> = ({ serverUrl 
   const [showSessionInput, setShowSessionInput] = useState<boolean>(true);
   const [participants] = useState<number>(0); // 可后续扩展
 
+  // Toast 通知
+  const [toast, setToast] = useState('');
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 2000);
+  };
+
   // 创建新会话
   const createSession = async () => {
-    const resp = await fetch(`${serverUrl.replace(/\/webtransport\/canva.*/, '')}/create`, { method: 'POST' });
-    const data = await resp.json();
-    setSessionId(data.code);
-    setShowSessionInput(false);
+    try {
+      const resp = await fetch(`${serverUrl.replace(/\/webtransport\/canva.*/, '')}/create`, { method: 'POST' });
+      const data = await resp.json();
+      setSessionId(data.code);
+      setShowSessionInput(false);
+    } catch {
+      showToast('网络错误，创建会话失败');
+    }
   };
 
   // 加入会话
   const joinSession = async () => {
     if (inputSessionId.trim()) {
       const code = inputSessionId.trim().toUpperCase();
-      const resp = await fetch(`${serverUrl.replace(/\/webtransport\/canva.*/, '')}/join?code=${code}`);
-      if (resp.ok) {
-        setSessionId(code);
-        setShowSessionInput(false);
-      } else {
-        alert('会话不存在！');
+      try {
+        const resp = await fetch(`${serverUrl.replace(/\/webtransport\/canva.*/, '')}/join?code=${code}`);
+        if (resp.ok) {
+          setSessionId(code);
+          setShowSessionInput(false);
+        } else {
+          showToast('会话不存在！');
+        }
+      } catch {
+        showToast('网络错误，加入会话失败');
       }
     }
   };
@@ -53,8 +68,22 @@ export const CanvasWebTransport: React.FC<{ serverUrl: string }> = ({ serverUrl 
   // 复制会话ID到剪贴板
   const copySessionId = () => {
     navigator.clipboard.writeText(sessionId);
-    alert('会话ID已复制到剪贴板！');
+    showToast('会话ID已复制到剪贴板！');
   };
+
+  // 画单个事件
+  const drawEventOnCanvas = useCallback((event: DrawEvent) => {
+    const ctx = canvasRef.current?.getContext('2d');
+    if (!ctx || event.type !== 'draw') return;
+    ctx.strokeStyle = event.color || '#222';
+    ctx.lineWidth = event.size || 2;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(event.prev_x!, event.prev_y!);
+    ctx.lineTo(event.curr_x!, event.curr_y!);
+    ctx.stroke();
+  }, []);
 
   // 画布自适应容器宽度
   useEffect(() => {
@@ -70,12 +99,7 @@ export const CanvasWebTransport: React.FC<{ serverUrl: string }> = ({ serverUrl 
   }, []);
 
   // 重绘历史
-  const redraw = useCallback((events: DrawEvent[]) => {
-    const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvasSize.width, canvasSize.height);
-    events.forEach(drawEventOnCanvas);
-  }, [canvasSize]);
+  // redraw已废弃，无需保留
 
   // 初始化连接
   useEffect(() => {
@@ -95,38 +119,24 @@ export const CanvasWebTransport: React.FC<{ serverUrl: string }> = ({ serverUrl 
     c.onMessage((msg: ClientDrawResponse) => {
       if (msg.initial_history) {
         setHistory(msg.initial_history.events);
+        // 不再全量 redraw，直接依赖 setHistory
       } else if (msg.draw_event) {
-        setHistory((h) => {
-          const nh = [...h, msg.draw_event!];
-          drawEventOnCanvas(msg.draw_event!);
-          return nh;
-        });
+        if (msg.draw_event.type === 'clear') {
+          // 清空历史并清空画布
+          setHistory([]);
+          const ctx = canvasRef.current?.getContext('2d');
+          ctx?.clearRect(0, 0, canvasSize.width, canvasSize.height);
+        } else {
+          setHistory((h) => {
+            drawEventOnCanvas(msg.draw_event!);
+            return [...h, msg.draw_event!];
+          });
+        }
       }
     });
     c.connect();
     return () => c.close();
-  }, [serverUrl, sessionId]);
-
-  // 监听 history 和 canvasSize，统一 redraw
-  useEffect(() => {
-    if (history.length) {
-      redraw(history);
-    }
-  }, [history, redraw]);
-
-  // 画单个事件
-  const drawEventOnCanvas = (event: DrawEvent) => {
-    const ctx = canvasRef.current?.getContext('2d');
-    if (!ctx || event.type !== 'draw') return;
-    ctx.strokeStyle = event.color || '#222';
-    ctx.lineWidth = event.size || 2;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(event.prev_x!, event.prev_y!);
-    ctx.lineTo(event.curr_x!, event.curr_y!);
-    ctx.stroke();
-  };
+  }, [serverUrl, sessionId, canvasSize, drawEventOnCanvas]);
 
   // 获取鼠标/触摸在画布上的坐标
   const getCanvasCoordinates = (e: React.PointerEvent | React.TouchEvent) => {
@@ -229,6 +239,7 @@ export const CanvasWebTransport: React.FC<{ serverUrl: string }> = ({ serverUrl 
             </form>
           </div>
         </div>
+        {toast && <div className="toast-tip">{toast}</div>}
       </div>
     );
   }
@@ -281,6 +292,7 @@ export const CanvasWebTransport: React.FC<{ serverUrl: string }> = ({ serverUrl 
           style={{ touchAction: 'none' }}
         />
       </div>
+      {toast && <div className="toast-tip">{toast}</div>}
     </div>
   );
 };
