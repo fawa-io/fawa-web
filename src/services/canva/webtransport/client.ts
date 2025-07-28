@@ -70,31 +70,31 @@ export type DrawEvent = {
       } else {
         console.log('浏览器不支持 WebTransport，使用 WebSocket');
         this.connectWebSocket();
+        }
       }
-    }
 
     private connectWebSocket() {
       try {
         console.log('尝试连接 WebSocket:', this.wsUrl);
-        this.ws = new WebSocket(this.wsUrl);
+      this.ws = new WebSocket(this.wsUrl);
         this.ws.onopen = () => {
           console.log('WebSocket 连接成功');
-          this.transport = 'websocket';
+      this.transport = 'websocket';
           if (this.onOpenHandler) this.onOpenHandler();
-        };
+      };
         this.ws.onmessage = (event) => {
-          try {
+        try {
             const msg = JSON.parse(event.data);
             console.log('WebSocket 收到消息:', msg);
             if (this.onMessageHandler) this.onMessageHandler(msg);
           } catch (error) {
             console.error('WebSocket 消息解析失败:', error);
           }
-        };
+      };
         this.ws.onclose = (event) => {
           console.log('WebSocket 连接关闭:', event);
           if (this.onCloseHandler) this.onCloseHandler(event);
-        };
+      };
         this.ws.onerror = (error) => {
           console.error('WebSocket 连接错误:', error);
         };
@@ -175,7 +175,7 @@ export type DrawEvent = {
         }
       }
     }
-
+  
     private async handleUnidirectionalStream(stream: ReadableStream) {
       console.log('处理 unidirectional stream');
       const decoder = new TextDecoder();
