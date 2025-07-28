@@ -124,7 +124,7 @@ export const CanvasWebTransport: React.FC<{ serverUrl: string }> = ({ serverUrl 
         if (msg.draw_event.type === 'clear') {
           // 清空历史并清空画布
           setHistory([]);
-          const ctx = canvasRef.current?.getContext('2d');
+    const ctx = canvasRef.current?.getContext('2d');
           ctx?.clearRect(0, 0, canvasSize.width, canvasSize.height);
         } else {
           setHistory((h) => {
@@ -281,16 +281,16 @@ export const CanvasWebTransport: React.FC<{ serverUrl: string }> = ({ serverUrl 
         </div>
       </div>
       <div className="canvas-container" ref={containerRef} style={{ height: DEFAULT_CANVAS_HEIGHT }}>
-        <canvas
-          ref={canvasRef}
+      <canvas
+        ref={canvasRef}
           width={canvasSize.width}
           height={canvasSize.height}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerLeave={handlePointerUp}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
           style={{ touchAction: 'none' }}
-        />
+      />
       </div>
       {toast && <div className="toast-tip">{toast}</div>}
     </div>
