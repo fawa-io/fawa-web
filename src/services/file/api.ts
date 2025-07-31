@@ -1,5 +1,5 @@
 import { createClient } from "@connectrpc/connect";
-import { FileService } from "../../gen/fawa/file/v1/file_pb";
+import { FileService } from "../../gen/file/v1/file_pb";
 import { createConnectTransport } from "@connectrpc/connect-web";
 
 const transport = createConnectTransport({

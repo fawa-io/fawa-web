@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { canvaClient } from "../api";
 import { create } from "@bufbuild/protobuf";
-import type { DrawEvent, ClientDrawRequest } from "../../../gen/fawa/canva/v1/canva_pb";
-import { DrawEventSchema, ClientDrawRequestSchema } from "../../../gen/fawa/canva/v1/canva_pb";
+import type { DrawEvent, ClientDrawRequest } from "../../../gen/canva/v1/canva_pb";
+import { DrawEventSchema, ClientDrawRequestSchema } from "../../../gen/canva/v1/canva_pb";
 
 interface DrawPosition {
   prevX: number;

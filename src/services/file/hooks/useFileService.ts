@@ -2,7 +2,7 @@ import { useState } from "react";
 import { create } from "@bufbuild/protobuf";
 
 import { fileClient } from "../api";
-import { SendFileRequestSchema, FileInfoSchema } from "../../../gen/fawa/file/v1/file_pb.ts";
+import { SendFileRequestSchema, FileInfoSchema } from "../../../gen/file/v1/file_pb";
 
 export function useFileService() {
   const [logs, setLogs] = useState<string[]>([]);
