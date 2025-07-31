@@ -42,6 +42,7 @@ export type DrawEvent = {
     private onMessageHandler: MessageHandler | null = null;
     private onOpenHandler: OpenHandler | null = null;
     private onCloseHandler: CloseHandler | null = null;
+    public clientId: string | null = null; // 添加 clientId 属性
   
     constructor(wtUrl: string, wsUrl?: string) {
       this.url = wtUrl;
@@ -86,6 +87,13 @@ export type DrawEvent = {
         try {
             const msg = JSON.parse(event.data);
             console.log('WebSocket 收到消息:', msg);
+            
+            // 如果消息包含 client_id，设置到客户端
+            if (msg.client_id && !this.clientId) {
+              this.clientId = msg.client_id;
+              console.log('设置客户端ID:', this.clientId);
+            }
+            
             if (this.onMessageHandler) this.onMessageHandler(msg);
           } catch (error) {
             console.error('WebSocket 消息解析失败:', error);
@@ -167,6 +175,13 @@ export type DrawEvent = {
         try {
           const msg = JSON.parse(buffer);
           console.log('bidirectional stream 解析到消息:', msg);
+          
+          // 如果消息包含 client_id，设置到客户端
+          if (msg.client_id && !this.clientId) {
+            this.clientId = msg.client_id;
+            console.log('设置客户端ID:', this.clientId);
+          }
+          
           if (this.onMessageHandler) this.onMessageHandler(msg);
           buffer = ''; // 清空缓冲区
         } catch {
@@ -196,6 +211,13 @@ export type DrawEvent = {
         try {
           const msg = JSON.parse(buffer);
           console.log('unidirectional stream 解析到消息:', msg);
+          
+          // 如果消息包含 client_id，设置到客户端
+          if (msg.client_id && !this.clientId) {
+            this.clientId = msg.client_id;
+            console.log('设置客户端ID:', this.clientId);
+          }
+          
           if (this.onMessageHandler) this.onMessageHandler(msg);
           buffer = ''; // 清空缓冲区
         } catch {

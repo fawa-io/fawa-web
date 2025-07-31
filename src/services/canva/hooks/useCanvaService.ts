@@ -41,6 +41,10 @@ export function useCanvaService() {
   const contextRef = useRef<CanvasRenderingContext2D | null>(null);
   const isDrawingRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  // 跟踪上一个绘制点，用于连续线条
+  const lastDrawPointRef = useRef<{ x: number; y: number } | null>(null);
+  // 跟踪当前路径状态
+  const currentPathRef = useRef<{ color: string; size: number } | null>(null);
 
   const addLog = useCallback((message: string) => {
     setLogs((prev) => [
@@ -71,39 +75,73 @@ export function useCanvaService() {
     addLog("画布初始化完成");
   }, [addLog]);
 
-  const drawLine = useCallback((prevX: number, prevY: number, currX: number, currY: number, color: string, size: number) => {
+  const drawOnCanvas = useCallback((event: DrawEvent, skipOwnEvents: boolean = true) => {
     if (!contextRef.current) return;
+    
+    // 如果是跳过自己的事件，且是当前用户的事件，则不绘制
+    if (skipOwnEvents && clientId && event.clientId === clientId) {
+      return;
+    }
+    
     const ctx = contextRef.current;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = size;
-    ctx.beginPath();
-    ctx.moveTo(prevX, prevY);
-    ctx.lineTo(currX, currY);
-    ctx.stroke();
-  }, []);
-
-  const drawOnCanvas = useCallback((event: DrawEvent) => {
-    if (!contextRef.current) return;
-    const ctx = contextRef.current;
-    ctx.strokeStyle = event.color;
-    ctx.lineWidth = event.size;
+    
     switch(event.type) {
-      case "draw":
-        ctx.beginPath();
-        ctx.moveTo(event.prevX, event.prevY);
+      case "draw": {
+        // 检查是否需要开始新路径（颜色/大小改变或非连续绘制）
+        const isSameStyle = currentPathRef.current && 
+          currentPathRef.current.color === event.color && 
+          currentPathRef.current.size === event.size;
+        
+        const isContinuous = lastDrawPointRef.current && 
+          lastDrawPointRef.current.x === event.prevX && 
+          lastDrawPointRef.current.y === event.prevY;
+        
+        const shouldStartNewPath = !isSameStyle || !isContinuous;
+        
+        if (shouldStartNewPath) {
+          // 结束当前路径
+          if (currentPathRef.current) {
+            ctx.stroke();
+          }
+          
+          // 开始新路径
+          ctx.beginPath();
+          ctx.strokeStyle = event.color;
+          ctx.lineWidth = event.size;
+          ctx.moveTo(event.prevX, event.prevY);
+          
+          // 更新当前路径状态
+          currentPathRef.current = { color: event.color, size: event.size };
+        }
+        
+        // 添加线段到当前路径
         ctx.lineTo(event.currX, event.currY);
-        ctx.stroke();
+        
+        // 保存当前点作为下一个线段的起点
+        lastDrawPointRef.current = { x: event.currX, y: event.currY };
         break;
-      case "clear":
+      }
+        
+      case "clear": {
         if (canvasRef.current) {
+          // 结束当前路径
+          if (currentPathRef.current) {
+            ctx.stroke();
+          }
+          
           ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+          // 清除时重置连续绘制状态
+          lastDrawPointRef.current = null;
+          currentPathRef.current = null;
           addLog(`画布已被用户 ${event.clientId} 清除`);
         }
         break;
+      }
+        
       default:
         break;
     }
-  }, [addLog]);
+  }, [addLog, clientId]);
 
   // 处理待发送的事件
   const processPendingEvents = useCallback(async () => {
@@ -116,8 +154,7 @@ export function useCanvaService() {
       async function* generateEvents() {
         for (const event of pendingEvents.current) {
           yield event;
-          // 添加小延迟，避免消息过快
-          await new Promise(resolve => setTimeout(resolve, 20));
+          // 移除延迟，确保绘制事件连续
         }
       }
       
@@ -146,12 +183,6 @@ export function useCanvaService() {
           }
         } else if (response.message.case === "drawEvent") {
           const drawEvent = response.message.value;
-          
-          // 如果不是自己发送的才绘制
-          if (clientId && drawEvent.clientId === clientId) {
-            continue;
-          }
-          
           drawOnCanvas(drawEvent);
         }
       }
@@ -167,7 +198,7 @@ export function useCanvaService() {
         processPendingEventsRef.current();
       }
     }
-  }, [addLog, clientId, drawOnCanvas, isConnected]);
+  }, [addLog, drawOnCanvas, isConnected]);
 
   // 更新processPendingEventsRef引用
   useEffect(() => {
@@ -195,20 +226,6 @@ export function useCanvaService() {
 
   // 发送事件
   const sendEvent = useCallback((type: string, position: DrawPosition) => {
-    // 本地立即绘制
-    if (type === "draw") {
-      drawLine(
-        position.prevX, 
-        position.prevY, 
-        position.currX, 
-        position.currY, 
-        settings.color, 
-        settings.size
-      );
-    } else if (type === "clear" && canvasRef.current && contextRef.current) {
-      contextRef.current.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    }
-    
     // 创建绘制事件
     const drawEvent = create(DrawEventSchema, {
       type,
@@ -221,27 +238,28 @@ export function useCanvaService() {
       clientId
     });
     
+    // 本地立即绘制（不跳过自己的事件）
+    drawOnCanvas(drawEvent, false);
+    
     // 排队等待发送
     queueEvent(drawEvent);
-  }, [settings, clientId, drawLine, queueEvent]);
+  }, [settings, clientId, drawOnCanvas, queueEvent]);
 
   const startDrawing = useCallback((x: number, y: number) => {
     if (!contextRef.current || !isConnected) return;
     isDrawingRef.current = true;
     
-    const roundedX = Math.round(x);
-    const roundedY = Math.round(y);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const roundedX = Math.round(x - rect.left);
+    const roundedY = Math.round(y - rect.top);
     lastPointRef.current = { x: roundedX, y: roundedY };
     
-    const position: DrawPosition = {
-      prevX: roundedX,
-      prevY: roundedY,
-      currX: roundedX,
-      currY: roundedY
-    };
-    
-    sendEvent("draw", position);
-  }, [isConnected, sendEvent]);
+    // 不发送第一个绘制事件，因为还没有线段
+    // 第一个线段将在 draw 函数中发送
+  }, [isConnected]);
 
   const draw = useCallback((x: number, y: number) => {
     if (!isDrawingRef.current || !contextRef.current || !isConnected) return;
@@ -292,6 +310,12 @@ export function useCanvaService() {
     }
     
     try {
+      // 确保当前路径被绘制
+      if (contextRef.current && currentPathRef.current) {
+        contextRef.current.stroke();
+        currentPathRef.current = null;
+      }
+      
       if (abortController.current) {
         abortController.current.abort();
         abortController.current = null;
@@ -415,13 +439,6 @@ export function useCanvaService() {
           for await (const response of listenerStream) {
             if (response.message.case === "drawEvent") {
               const drawEvent = response.message.value;
-              
-              // 跳过自己的事件
-              if (drawEvent.clientId === randomId) {
-                continue;
-              }
-              
-              // 绘制其他用户的事件
               drawOnCanvas(drawEvent);
             }
           }
@@ -447,6 +464,11 @@ export function useCanvaService() {
   // 组件卸载时清理
   useEffect(() => {
     return () => {
+      // 确保当前路径被绘制
+      if (contextRef.current && currentPathRef.current) {
+        contextRef.current.stroke();
+      }
+      
       if (isConnected) {
         disconnect();
       }
