@@ -1,6 +1,6 @@
 import { createClient } from "@connectrpc/connect";
 
-import { GreetService } from "../../gen/fawa/greet/v1/hello_pb";
+import { GreetService } from "../../gen/greet/v1/hello_pb";
 
 import { createConnectTransport } from "@connectrpc/connect-web";
 
